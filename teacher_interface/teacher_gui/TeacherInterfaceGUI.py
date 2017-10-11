@@ -3,7 +3,7 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, ttk, LEFT, RIGHT
+from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM
 from tkinter.ttk import *
 from ttkthemes import themed_tk as tk
 
@@ -31,9 +31,7 @@ class TeacherInterfaceGUI:
     def add_styling(self):
         """Add custom styling here"""
         style = ttk.Style()
-        style.configure("BW.TLabel", foreground="white", background="black") #random example
-        style.configure("Color.TFrame", background="#334353")
-        style.configure("Black.TFrame", background="black")
+        style.configure("Groove.TFrame", relief="groove")
 
     def add_heading_area(self, master):
         """Header area with logo"""
@@ -52,19 +50,51 @@ class TeacherInterfaceGUI:
         self.main_page = ttk.Frame(nb)
 
         self.add_element_bit_list_frame()
+        self.add_reaction_frame()
         self.add_info_frame()
 
         nb.add(self.main_page, text='Main')
    
     def add_element_bit_list_frame(self):
-        """ Frame has list of ElementBits and their current element/compounds """
-        element_bit_list_frame = ttk.Frame(self.main_page, style="Color.TFrame")
-        element_bit_list_frame.pack(side=LEFT, fill="both", expand="true")
+        """ Frame contains
+            - list of ElementBits and their current element/compounds """
+        self.element_bit_list_frame = ttk.Frame(self.main_page, style="Groove.TFrame")
+
+        self.element_bit_list_frame_label = ttk.Label(self.element_bit_list_frame, text="ElementBit List")
+        self.element_bit_list_frame_label.pack(pady=10)
+
+        self.element_bit_list_frame.pack(side=LEFT, fill="both", expand="true")
+
+    def add_reaction_frame(self):
+        """ Frame contains 
+            - information about the current ongoing reaction(s)
+            - log of past reactions? """
+        self.reaction_frame = ttk.Frame(self.main_page, style="Groove.TFrame")
+
+        self.reaction_frame_label = ttk.Label(self.reaction_frame, text="Reaction Panel")
+        self.reaction_frame_label.pack(pady=10)
+
+        self.current_reactions_frame = ttk.Frame(self.reaction_frame)
+        self.current_reactions_frame.pack(padx=5, side=TOP, fill="both", expand="true")
+
+        self.reaction_log_frame = ttk.Frame(self.reaction_frame, height="250", style="Groove.TFrame")
+        self.reaction_log_frame_label = ttk.Label(self.reaction_log_frame, text="Reaction Log")
+        self.reaction_log_frame_label.pack(pady=10)
+        self.reaction_log_frame.pack(padx=5, pady=5, side=BOTTOM, fill="both", expand="false")
+        self.reaction_log_frame.pack_propagate(0)
+
+        self.reaction_frame.pack(side=LEFT, fill="both", expand="true")
 
     def add_info_frame(self):
-        """ Frame contains information about the element/compound on whichever ElementBit has been selected in the list """
-        info_frame = ttk.Frame(self.main_page, style="Black.TFrame")
-        info_frame.pack(side=RIGHT, fill="both", expand="true")
+        """ Frame contains 
+            - information about the element/compound on whichever ElementBit has been selected in the list
+            - description of current scenario? """
+        self.info_frame = ttk.Frame(self.main_page, style="Groove.TFrame")
+
+        self.info_frame_label = ttk.Label(self.info_frame, text="Information Panel")
+        self.info_frame_label.pack(pady=10)
+
+        self.info_frame.pack(side=RIGHT, fill="both", expand="true")
 
     def add_options_page(self, nb):
         """ Options tab has
