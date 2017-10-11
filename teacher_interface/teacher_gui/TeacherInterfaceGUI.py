@@ -3,8 +3,9 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, Tk, ttk
+from tkinter import PhotoImage, ttk, LEFT, RIGHT
 from tkinter.ttk import *
+from ttkthemes import themed_tk as tk
 
 
 class TeacherInterfaceGUI:
@@ -31,6 +32,8 @@ class TeacherInterfaceGUI:
         """Add custom styling here"""
         style = ttk.Style()
         style.configure("BW.TLabel", foreground="white", background="black") #random example
+        style.configure("Color.TFrame", background="#334353")
+        style.configure("Black.TFrame", background="black")
 
     def add_heading_area(self, master):
         """Header area with logo"""
@@ -46,9 +49,23 @@ class TeacherInterfaceGUI:
                 - panel showing current reaction(s) 
                 - panel with description for current scenario? """
 
-        self.main_page = ttk.Frame(nb, width=1000, height=600)
+        self.main_page = ttk.Frame(nb)
+
+        self.add_element_bit_list_frame()
+        self.add_info_frame()
+
         nb.add(self.main_page, text='Main')
-        
+   
+    def add_element_bit_list_frame(self):
+        """ Frame has list of ElementBits and their current element/compounds """
+        element_bit_list_frame = ttk.Frame(self.main_page, style="Color.TFrame")
+        element_bit_list_frame.pack(side=LEFT, fill="both", expand="true")
+
+    def add_info_frame(self):
+        """ Frame contains information about the element/compound on whichever ElementBit has been selected in the list """
+        info_frame = ttk.Frame(self.main_page, style="Black.TFrame")
+        info_frame.pack(side=RIGHT, fill="both", expand="true")
+
     def add_options_page(self, nb):
         """ Options tab has
                 - list of fields to include in information panel """
@@ -66,7 +83,8 @@ class TeacherInterfaceGUI:
         nb.add(self.scenarios_page, text="Load Scenario")
 
 
-root = Tk()
+root = tk.ThemedTk()
+root.set_theme("arc")
 root.minsize(1024,648)
 gui = TeacherInterfaceGUI(root)
 root.mainloop()
