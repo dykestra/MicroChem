@@ -3,7 +3,7 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM
+from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, StringVar
 from tkinter.ttk import *
 from ttkthemes import themed_tk as tk
 
@@ -63,7 +63,28 @@ class TeacherInterfaceGUI:
         self.element_bit_list_frame_label = ttk.Label(self.element_bit_list_frame, text="ElementBit List")
         self.element_bit_list_frame_label.pack(pady=10)
 
-        self.element_bit_list_frame.pack(side=LEFT, fill="both", expand="true")
+        self.element_bit_tree = ttk.Treeview(self.element_bit_list_frame, selectmode="browse")
+        self.element_bit_tree['show'] = 'headings' # hide empty first column
+        self.element_bit_tree['columns'] = ('id', 'element')
+        
+        self.element_bit_tree.column('id', width=100)
+        self.element_bit_tree.heading('id', text='ElementBit ID')
+        self.element_bit_tree.column('element', width=150)
+        self.element_bit_tree.heading('element', text='Element/Compound')
+
+        for x in range(0,10):
+            self.element_bit_tree.insert('','end', values=(str(x) + ' blah'))
+
+        self.element_bit_tree.pack()
+        self.element_bit_tree.bind("<<TreeviewSelect>>", self.on_element_bit_tree_select)
+
+        self.element_bit_list_frame.pack(side=LEFT,ipadx=10, fill="both", expand="false")
+
+    def on_element_bit_tree_select(self, event):
+        """ Get values from selection and update info frame """
+        selection = self.element_bit_tree.selection()[0]
+        item = self.element_bit_tree.item(selection)
+        self.info_frame_update(item['values'])
 
     def add_reaction_frame(self):
         """ Frame contains 
@@ -94,7 +115,17 @@ class TeacherInterfaceGUI:
         self.info_frame_label = ttk.Label(self.info_frame, text="Information Panel")
         self.info_frame_label.pack(pady=10)
 
+        selected_element_label = ttk.Label(self.info_frame, text="Selected Element")
+        selected_element_label.pack()
+
+        self.selected_element_string = StringVar()
+        selected_element_box = ttk.Entry(self.info_frame, textvariable=self.selected_element_string, state="readonly")
+        selected_element_box.pack()
+
         self.info_frame.pack(side=RIGHT, fill="both", expand="true")
+
+    def info_frame_update(self, selection):
+        self.selected_element_string.set(selection)
 
     def add_options_page(self, nb):
         """ Options tab has
