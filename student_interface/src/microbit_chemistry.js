@@ -1,5 +1,7 @@
 let symbol_len = 0
 let str_elect_bal = ""
+let packet_ok = 0
+let chk_chars: number[] = []
 let electron_balance = 0
 let chem_symbol = ""
 let sym_num = 0
@@ -20,24 +22,27 @@ function show_page()  {
         basic.showNumber(electron_balance)
     }
 }
-function set_symbol()  {
-    sym_num = Math.random(6)
-    initialise_element()
-}
-function attempt_compound()  {
-    basic.showString("STUB")
-}
-function initialise_element()  {
-    basic.showString("SETUP")
-    radio.sendValue("symbol_num", sym_num)
-}
 radio.onDataPacketReceived( ({ receivedNumber, receivedString }) =>  {
     if (receivedNumber == sym_num) {
         basic.showString(receivedString)
-        str_elect_bal = receivedString.substr(0, 2)
-        symbol_len = receivedString.length - 3
-        chem_symbol = receivedString.substr(3, symbol_len)
-        electron_balance = parseInt(str_elect_bal)
+        chk_chars = [0, 3, 5, receivedString.length - 1]
+        for (let ch of chk_chars) {
+            if (receivedString.charAt(ch) == "#") {
+                packet_ok = 1
+            } else {
+                packet_ok = 0
+                basic.showString("F:")
+                basic.showNumber(ch)
+            }
+        }
+        if (packet_ok == 1) {
+            str_elect_bal = receivedString.substr(1, 2)
+            symbol_len = receivedString.length - 7
+            chem_symbol = receivedString.substr(6, symbol_len)
+            electron_balance = parseInt(str_elect_bal)
+        } else {
+            radio.sendValue("symbol_num", sym_num)
+        }
     } else {
         if (receivedNumber == -1) {
             sym_num = parseInt(receivedString)
@@ -46,6 +51,26 @@ radio.onDataPacketReceived( ({ receivedNumber, receivedString }) =>  {
     }
     basic.showString(chem_symbol)
 })
+function set_symbol()  {
+    sym_num = Math.random(6)
+    initialise_element()
+}
+function attempt_compound()  {
+    basic.showString("STUB")
+}
+function initialise_element()  {
+    basic.showLeds(`
+        . # . . .
+        . . # . .
+        . # # # .
+        . . # . .
+        . . . # .
+        `)
+    radio.sendValue("symbol_num", sym_num)
+}
+function check_packet()  {
+    basic.showString("STUB")
+}
 input.onButtonPressed(Button.AB, () => {
     attempt_compound()
     basic.showLeds(`
