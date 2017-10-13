@@ -35,10 +35,10 @@ try:
         print("Writing in: ", str(symbols[symbol_int]))
         print("Writing in: ", str(electron_bal[symbol_int]))
         
-        s.write(symbols[symbol_int]+b'\n')
-        print(symbols[symbol_int]+b'\n')
-        s.write(electron_bal[symbol_int]+b'\n')
-        print(electron_bal[symbol_int]+b'\n')
+        s.write(b'#'+symbols[symbol_int]+b'#\n')
+        print(b'#'+symbols[symbol_int]+b'#\n')
+        s.write(b'#'+electron_bal[symbol_int]+b'#\n')
+        print(b'#'+electron_bal[symbol_int]+b'#\n')
 
         #NOTE: There is some annoying bug in which:
         # a) things don't always change as they should in the element MB
