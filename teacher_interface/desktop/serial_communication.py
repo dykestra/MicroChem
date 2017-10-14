@@ -20,7 +20,7 @@ try:
         # strip the whitespace at the end
         data = s.readline().rstrip()
 
-        #print(data)
+        print(data)
         
         #split the data into x, y, z
         data_s = data.split(b":")
@@ -34,18 +34,14 @@ try:
 
         print("Writing in: ", str(symbols[symbol_int]))
         print("Writing in: ", str(electron_bal[symbol_int]))
-        
-        s.write(b'#'+symbols[symbol_int]+b'#\n')
-        print(b'#'+symbols[symbol_int]+b'#\n')
-        s.write(b'#'+electron_bal[symbol_int]+b'#\n')
-        print(b'#'+electron_bal[symbol_int]+b'#\n')
 
-        #NOTE: There is some annoying bug in which:
-        # a) things don't always change as they should in the element MB
-        # b) The hub MB doesn't seem to get to the "processing..." stage, so
-        #    doesn't update the element
-    # COULD IT BE MESSAGE CORRUPTION? SHOULD HAVE SOME CHECKS, ACKS,
-    # AND BUFFERING OF THE MESSAGES
+        s.write(b'#'+symbols[symbol_int]+b'#\n')
+        print(b'#'+symbols[symbol_int]+b'#$')
+
+        for x in range(0, 3): #HACK to ensure the message gets through
+            s.write(b'#'+electron_bal[symbol_int]+b'\n')
+        print(b'#'+electron_bal[symbol_int]+b'\n')
+
         #s.write(b'C\n')
         #s.write(b'-4\n')
 
