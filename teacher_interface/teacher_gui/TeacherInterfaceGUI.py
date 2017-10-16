@@ -14,8 +14,12 @@ class TeacherInterfaceGUI:
     IMAGE_DIR = os.path.join(CURRENT_DIR, 'images')
 
     def __init__(self, master):
-        self.master = master
+        # customize root object
         master.title("Micro:Chem")
+        master.set_theme("arc")
+        master.minsize(1024, 648)
+        master.configure(background='#f5f6f7')
+        self.master = master
 
         self.add_styling()
 
@@ -148,8 +152,5 @@ class TeacherInterfaceGUI:
 
 
 root = tk.ThemedTk()
-root.set_theme("arc")
-root.minsize(1024,648)
-root.configure(background = '#f5f6f7')
 gui = TeacherInterfaceGUI(root)
 root.mainloop()
