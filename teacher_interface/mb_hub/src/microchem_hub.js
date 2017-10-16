@@ -32,22 +32,22 @@ let curr_symbol = ""
 
 function get_chem_data() {
     led_breathe()
-    serial.writeValue(id_in, curr_symbol_int)
-    curr_symbol = serial.readUntil(serial.delimiters(Delimiters.NewLine))
-    str_electron_bal = serial.readUntil(serial.delimiters(Delimiters.NewLine))
-    //send_str = "" + str_electron_bal + curr_symbol
+    serial.writeValue("0:" + id_in + ":TEST", curr_symbol_int)
+    //serial.writeString("0:"+id_in+":TEST")
+    send_str = serial.readUntil(serial.delimiters(Delimiters.NewLine))
+    str_electron_bal = send_str.substr(0, 2)
+    curr_symbol = send_str.substr(2, send_str.length - 2)
+    send_str = "#" + str_electron_bal + "#" + curr_symbol + "#"
     basic.showString("S:")
-    //basic.showString(send_str)
 }
 
-radio.onDataPacketReceived(({ receivedString: msg_in, receivedNumber: value }) => {
+radio.onDataPacketReceived(({ receivedString: msg_in }) => {
     msg_len = msg_in.length
     comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
     id_in = msg_in.substr(check_len + comm_type_len, ID_len)
     msg_type = parseInt(msg_in.substr(check_len + comm_type_len + ID_len, msg_type_len))
     message = msg_in.substr(check_len + comm_type_len + ID_len + msg_type_len, msg_len - check_len - comm_type_len - ID_len - msg_type_len)
     if (comm_type == MBHUB) {
-        curr_symbol_int = value
         get_chem_data()
         send_chem_data()
     }
@@ -65,9 +65,9 @@ function show_S() {
 }
 
 function send_chem_data() {
-    send_str = HUBMB.toString() + id_in + NEW_ELEMENT.toString() + str_electron_bal + curr_symbol
+    send_str = HUBMB.toString() + id_in + NEW_ELEMENT.toString() + send_str
     basic.showString(send_str)
-    radio.sendValue(send_str, curr_symbol_int)
+    radio.sendString(send_str)
 }
 
 function get_compound_data() {

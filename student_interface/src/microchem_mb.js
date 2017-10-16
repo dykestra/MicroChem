@@ -57,7 +57,7 @@ function show_page() {
     }
 }
 
-radio.onDataPacketReceived(({ receivedNumber, receivedString: msg_in }) => {
+radio.onDataPacketReceived(({ receivedString: msg_in }) => {
     basic.showString(msg_in)
     msg_len = msg_in.length
     comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
@@ -83,13 +83,13 @@ radio.onDataPacketReceived(({ receivedNumber, receivedString: msg_in }) => {
                 chem_symbol = message.substr(4, symbol_len)
                 electron_balance = parseInt(str_elect_bal)
             } else {
-                radio.sendValue(send_str, sym_num)
+		radio.sendString(send_str)
             }
         } else {
-            if (receivedNumber == -1) {
-                sym_num = parseInt(message)
-                initialise_element()
-            }
+            //if (receivedNumber == -1) {
+            //    sym_num = parseInt(message)
+            //    initialise_element()
+	    //}
         }
     }
     basic.showString(chem_symbol)
@@ -113,7 +113,7 @@ function initialise_element() {
         . . . # .
         `)
     send_str = MBHUB.toString() + own_ID + NEED_ELEMENT.toString() + "TEST" //REMOVE "TEST" LATER
-    radio.sendValue(send_str, sym_num)
+    radio.sendString(send_str)
 }
 
 function check_packet() {
