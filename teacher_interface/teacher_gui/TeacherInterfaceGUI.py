@@ -3,8 +3,7 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, StringVar
-from tkinter.ttk import *
+from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, CENTER, StringVar
 from ttkthemes import themed_tk as tk
 
 
@@ -12,7 +11,7 @@ class TeacherInterfaceGUI:
     """ Main GUI class """
 
     CURRENT_DIR = os.path.dirname(__file__)
-    IMAGE_DIR = os.path.join(CURRENT_DIR,'images')
+    IMAGE_DIR = os.path.join(CURRENT_DIR, 'images')
 
     def __init__(self, master):
         self.master = master
@@ -79,6 +78,10 @@ class TeacherInterfaceGUI:
         self.element_bit_tree.bind("<<TreeviewSelect>>", self.on_element_bit_tree_select)
 
         self.element_bit_list_frame.pack(side=LEFT,ipadx=10, fill="both", expand="false")
+
+    def update_element_bit_list(self, new_list):
+        """ update element bit list with new values """
+        # self.element_bit_tree.insert()
 
     def on_element_bit_tree_select(self, event):
         """ Get values from selection and update info frame """
@@ -147,5 +150,6 @@ class TeacherInterfaceGUI:
 root = tk.ThemedTk()
 root.set_theme("arc")
 root.minsize(1024,648)
+root.configure(background = '#f5f6f7')
 gui = TeacherInterfaceGUI(root)
 root.mainloop()
