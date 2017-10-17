@@ -23,16 +23,25 @@ let NO_REACT = 3
 let message = ""
 let msg_type = 0
 let id_in = ""
-let curr_symbol_int = 0
+let serial_in = ""
 let send_str = ""
 let comm_type = 0
 let str_electron_bal = ""
 let msg_len = 0
 let curr_symbol = ""
 
+function get_id_alias() {
+    led_breathe()
+    serial.writeValue("0:" + serial_in, 0)
+    //serial.writeString("0:"+id_in+":TEST")
+    send_str = serial.readUntil(serial.delimiters(Delimiters.NewLine))
+    send_str = "#" + serial_in + "#" + send_str + "#"
+    basic.showString("S:")
+}
+
 function get_chem_data() {
     led_breathe()
-    serial.writeValue("0:" + id_in + ":TEST", curr_symbol_int)
+    serial.writeValue("1:" + id_in + ":TEST", 0)
     //serial.writeString("0:"+id_in+":TEST")
     send_str = serial.readUntil(serial.delimiters(Delimiters.NewLine))
     str_electron_bal = send_str.substr(0, 2)
@@ -42,14 +51,21 @@ function get_chem_data() {
 }
 
 radio.onDataPacketReceived(({ receivedString: msg_in }) => {
+    basic.showString(msg_in)//TEST
     msg_len = msg_in.length
     comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
     id_in = msg_in.substr(check_len + comm_type_len, ID_len)
     msg_type = parseInt(msg_in.substr(check_len + comm_type_len + ID_len, msg_type_len))
     message = msg_in.substr(check_len + comm_type_len + ID_len + msg_type_len, msg_len - check_len - comm_type_len - ID_len - msg_type_len)
     if (comm_type == MBHUB) {
-        get_chem_data()
-        send_chem_data()
+	if (msg_type == STORE_ID) {
+	    serial_in = msg_in.substr(check_len + comm_type_len, serial_len)
+            get_id_alias()
+            send_id_alias()
+	} else if (msg_type == NEED_ELEMENT) {
+            get_chem_data()
+            send_chem_data()
+	}
     }
     show_S()
 })
@@ -62,6 +78,12 @@ function show_S() {
         . . . # .
         . # # # .
         `)
+}
+
+function send_id_alias() {
+    send_str = HUBMB.toString() + serial_in + OK_STORE_ID.toString() + send_str
+    basic.showString(send_str)
+    radio.sendString(send_str)
 }
 
 function send_chem_data() {
@@ -93,6 +115,4 @@ function led_breathe() {
 
 radio.setGroup(83)
 radio.setTransmitPower(7)
-curr_symbol_int = 0
-curr_symbol = "H"
 show_S() 
