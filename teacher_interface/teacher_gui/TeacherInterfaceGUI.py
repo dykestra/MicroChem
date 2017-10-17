@@ -3,8 +3,10 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, StringVar
+from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, Message
 from ttkthemes import themed_tk as tk
+import csv
+from collections import OrderedDict
 
 class TeacherInterfaceGUI:
     """ Main GUI class """
@@ -77,7 +79,10 @@ class TeacherInterfaceGUI:
         self.element_bit_tree.heading('valence', text='Valence')
 
         for x in range(0,10):
-            self.element_bit_tree.insert('','end', values=(str(x) + ' blah'))
+            if x<5:
+                self.element_bit_tree.insert('', 'end', values=(str(x) + ' H x'))
+            else:
+                self.element_bit_tree.insert('', 'end', values=(str(x) + ' O x'))
 
         self.element_bit_tree.pack()
         self.element_bit_tree.bind("<<TreeviewSelect>>", self.on_element_bit_tree_select)
@@ -101,13 +106,13 @@ class TeacherInterfaceGUI:
         """ Get values from selection and update info frame """
         selection = self.element_bit_tree.selection()[0]
         item = self.element_bit_tree.item(selection)
-        self.info_frame_update(item['values'])
+        self.info_frame_update(item['values'][1])  # send chemical symbol to info panel
 
     def add_reaction_frame(self):
         """ Frame contains 
             - information about the current ongoing reaction(s)
             - log of past reactions? """
-        self.reaction_frame = ttk.Frame(self.main_page, style="Groove.TFrame")
+        self.reaction_frame = ttk.Frame(self.main_page, width=400, style="Groove.TFrame")
 
         self.reaction_frame_label = ttk.Label(self.reaction_frame, text="Reaction Panel")
         self.reaction_frame_label.pack(pady=10)
@@ -121,7 +126,8 @@ class TeacherInterfaceGUI:
         self.reaction_log_frame.pack(padx=5, pady=5, side=BOTTOM, fill="both", expand="false")
         self.reaction_log_frame.pack_propagate(0)
 
-        self.reaction_frame.pack(side=LEFT, fill="both", expand="true")
+        self.reaction_frame.pack(side=LEFT, fill="both", expand="false")
+        self.reaction_frame.pack_propagate(0)
 
     def add_info_frame(self):
         """ Frame contains 
@@ -132,17 +138,48 @@ class TeacherInterfaceGUI:
         self.info_frame_label = ttk.Label(self.info_frame, text="Information Panel")
         self.info_frame_label.pack(pady=10)
 
-        selected_element_label = ttk.Label(self.info_frame, text="Selected Element")
-        selected_element_label.pack()
+        self.read_info_from_file()
 
-        self.selected_element_string = StringVar()
-        selected_element_box = ttk.Entry(self.info_frame, textvariable=self.selected_element_string, state="readonly")
-        selected_element_box.pack()
+        self.info_labels = []
+        self.info_entries = []
+        self.info_vars = []
 
         self.info_frame.pack(side=RIGHT, fill="both", expand="true")
 
-    def info_frame_update(self, selection):
-        self.selected_element_string.set(selection)
+    def read_info_from_file(self):
+        """ reads the whole information table from file into memory"""
+        self.info_table = []
+        with open(os.path.join(self.CURRENT_DIR, 'information.csv'), 'rt') as info_File:
+            reader = csv.DictReader(info_File)
+
+            for row in reader:
+                self.info_table.append(OrderedDict(sorted(row.items(),
+                                                key=lambda item: reader.fieldnames.index(item[0]))))
+
+
+    def info_frame_update(self, selected_symbol):
+        # get relevant info from table
+        info_results = [x for x in self.info_table if x['Symbol']==selected_symbol]
+        res = info_results[0]
+
+        # clear info from previous selection
+        for j in range(0,len(self.info_labels)):
+            self.info_labels[j].pack_forget()
+            self.info_entries[j].pack_forget()
+
+        self.info_labels.clear()
+        self.info_entries.clear()
+
+        # make labels and entries for new info
+        for key, value in res.items():
+            label = ttk.Label(self.info_frame, text=key)
+            self.info_labels.append(label)
+            label.pack()
+
+            info = Message(self.info_frame, text=value, aspect=500, background="white", relief="raised", fg="#535d6d")
+            self.info_entries.append(info)
+            info.pack(ipadx=5, ipady=5, pady=10)
+
 
     def add_options_page(self, nb):
         """ Options tab has
