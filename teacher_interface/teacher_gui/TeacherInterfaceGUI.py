@@ -3,9 +3,8 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, CENTER, StringVar
+from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, StringVar
 from ttkthemes import themed_tk as tk
-
 
 class TeacherInterfaceGUI:
     """ Main GUI class """
@@ -68,12 +67,14 @@ class TeacherInterfaceGUI:
 
         self.element_bit_tree = ttk.Treeview(self.element_bit_list_frame, selectmode="browse")
         self.element_bit_tree['show'] = 'headings' # hide empty first column
-        self.element_bit_tree['columns'] = ('id', 'element')
+        self.element_bit_tree['columns'] = ('id', 'element', 'valence')
         
         self.element_bit_tree.column('id', width=100)
         self.element_bit_tree.heading('id', text='ElementBit ID')
         self.element_bit_tree.column('element', width=150)
         self.element_bit_tree.heading('element', text='Element/Compound')
+        self.element_bit_tree.column('valence', width=50)
+        self.element_bit_tree.heading('valence', text='Valence')
 
         for x in range(0,10):
             self.element_bit_tree.insert('','end', values=(str(x) + ' blah'))
@@ -84,8 +85,17 @@ class TeacherInterfaceGUI:
         self.element_bit_list_frame.pack(side=LEFT,ipadx=10, fill="both", expand="false")
 
     def update_element_bit_list(self, new_list):
-        """ update element bit list with new values """
-        # self.element_bit_tree.insert()
+        """ update element bit list with new values stored in numpy ndarray
+            array items are expected to have 'aliasID', 'chem_symbol' and 'valence' """
+
+        # clear current tree
+        for row in self.element_bit_tree.get_children():
+            self.element_bit_tree.delete(row)
+
+        # repopulate tree
+        for item in new_list:
+            item_values = " ".join([item['aliasID'].decode('UTF-8'), item['chem_symbol'].decode('UTF-8'), item['valence'].decode('UTF-8')])
+            self.element_bit_tree.insert('', 'end', values=item_values)
 
     def on_element_bit_tree_select(self, event):
         """ Get values from selection and update info frame """
