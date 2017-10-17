@@ -58,7 +58,6 @@ function show_page() {
 }
 
 radio.onDataPacketReceived(({ receivedString: msg_in }) => {
-    //basic.showString(msg_in)
     msg_len = msg_in.length
     comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
     id_in = msg_in.substr(check_len + comm_type_len, ID_len)
@@ -84,11 +83,13 @@ radio.onDataPacketReceived(({ receivedString: msg_in }) => {
             if (packet_ok == 1) {
 		if (msg_type == OK_STORE_ID) {
 		    own_ID = message.substr(1,2)		    
-		} else { //(msg_type == NEW ELEMENT) {
+		} else if (msg_type == NEW_ELEMENT) {
                     str_elect_bal = message.substr(1, 2)
                     symbol_len = message.length - 5
                     chem_symbol = message.substr(4, symbol_len)
                     electron_balance = parseInt(str_elect_bal)
+		} else {
+		    basic.showString("STUB")
 		}
             } else {
 		radio.sendString(send_str)
@@ -151,7 +152,7 @@ input.onButtonPressed(Button.AB, () => {
         `)
 })
 
-own_ID = control.deviceName().substr(3, ID_len) //TEMP - CHANGE TO ALIAS ID QUERIED FROM HUB!
+own_ID = control.deviceName().substr(3, ID_len)
 //basic.showString(own_ID)
 radio.setGroup(83)
 chem_symbol = "H"

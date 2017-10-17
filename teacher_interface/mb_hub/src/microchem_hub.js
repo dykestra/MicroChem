@@ -51,7 +51,7 @@ function get_chem_data() {
 }
 
 radio.onDataPacketReceived(({ receivedString: msg_in }) => {
-    basic.showString(msg_in)//TEST
+    //basic.showString(msg_in) //TEMP for testing
     msg_len = msg_in.length
     comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
     id_in = msg_in.substr(check_len + comm_type_len, ID_len)
