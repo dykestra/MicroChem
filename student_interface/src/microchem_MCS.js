@@ -36,6 +36,7 @@ let chem_symbol = ""
 let sym_num = 0
 let curr_page = 0
 let send_str = ""
+let full_formula = ""
 
 let Threshold_Power = 0
 let CmdProcess = 0
@@ -45,27 +46,22 @@ let ActiveIDState: string[] = []
 let ActiveIDFlag: number[] = []
 let ActiveIDList: string[] = []
 let MBState = "Start-Up"
+let AnimationStage = 0
+let ClockSpeed = 500
 
 
+/********************************************* */
+/**     Controls the component on screen       */
+/********************************************* */
 input.onButtonPressed(Button.A, () => {
     curr_page += -1
-    show_page()
+    if (curr_page < 0) { curr_page = 0 }
 })
 
 input.onButtonPressed(Button.B, () => {
     curr_page += 1
-    show_page()
+    if (curr_page > (full_formula.length - 1)) { curr_page = (full_formula.length - 1) }
 })
-
-function show_page() {
-    if (curr_page == 0) {
-        basic.showString(chem_symbol)
-    } else {
-        curr_page = 1
-        basic.showNumber(electron_balance)
-    }
-}
-
 
 radio.onDataPacketReceived(({ receivedString, signal }) => {
     switch (MBState) {
@@ -84,6 +80,7 @@ radio.onDataPacketReceived(({ receivedString, signal }) => {
 basic.forever(() => {
     switch (MBState) {
         case "Start-Up":
+	    ClockSpeed = 500
             basic.showLeds(`
 			   . # . . .
 			   . . # . .
@@ -93,25 +90,33 @@ basic.forever(() => {
 			   `)
             if (chem_symbol != "") {
                 radio.setTransmitPower(0)
+		if (electron_balance > 0) {
+                    full_formula = chem_symbol + "+" + electron_balance.toString()
+                } else {
+                    full_formula = chem_symbol + electron_balance.toString()
+                }
                 MBState = "Ready"
             }
             break
         case "Ready":
-            basic.showString(chem_symbol)
+	    ClockSpeed = 500	
+            basic.showString(full_formula[curr_page])
             radio.sendString(MBMB.toString() + own_ID)
             BufferProcessing()
             break
         case "Reaction":
+	    ClockSpeed = 50	
             // Need a function that:
             // -> Create screen animation for reaction
             // -> Clean all matrices
+	    ReactionAnimation()
             MBState = "Ready"
             break
         default:
             MBState = "Start-Up"
     }
 
-    basic.pause(500)
+    basic.pause(ClockSpeed)
 })
 
 /********************************************* */
@@ -179,7 +184,7 @@ function MBMBProcessing(ID: string) {
             case "Send Hub":
                 ActiveIDState[IDIndex] = "Waiting Hub"
                 radio.setTransmitPower(7)
-                radio.sendString(MBHUB.toString() + own_ID + COLLISION.toString() + ID + chem_symbol)
+                radio.sendString(MBHUB.toString() + own_ID + COLLISION.toString() + ID)
                 radio.setTransmitPower(0)
                 break
             case "Waiting Hub":
@@ -200,7 +205,36 @@ function MBMBProcessing(ID: string) {
 /**Function processing HBMB messages */
 /*********************************** */
 function HBMBProcessing(message: string) {
-    // integration with Jukka
+    id_in = message.substr(0, ID_len)
+    msg_type = parseInt(message.substr(ID_len, msg_type_len))
+    message = message.substr(ID_len + msg_type_len, msg_len - ID_len - msg_type_len)
+    if (id_in == own_ID) {
+        if (msg_type == OK_STORE_ID) {
+            chk_chars = [0, 3]
+        } else {
+            chk_chars = [0, 3, message.length - 1]
+        }
+        for (let ch of chk_chars) {
+            if (message.charAt(ch) == "#") {
+                packet_ok = 1
+            } else {
+                packet_ok = 0
+            }
+        }
+        if (packet_ok == 1) {
+            if (msg_type == OK_STORE_ID) {
+                own_ID = message.substr(1, 2)
+            } else { //(msg_type == NEW_ELEMENT) {
+                str_elect_bal = message.substr(1, 2)
+                symbol_len = message.length - 5
+                chem_symbol = message.substr(4, symbol_len)
+                electron_balance = parseInt(str_elect_bal)
+            }
+        } else {
+            // Packet failed, request resend
+            radio.sendString(send_str)
+        }
+    }
 }
 
 
@@ -255,6 +289,116 @@ function initialise_element() {
     radio.sendString(send_str)
 }
 
+function ReactionAnimation() {
+    switch (AnimationStage) {
+        case 0:
+            basic.showLeds(`
+                . . . . .
+                . . . . .
+                . . # . .
+                . . . . .
+                . . . . .
+                `)
+            AnimationStage++
+            break
+        case 1:
+            basic.showLeds(`
+                . . . . .
+                . . # . .
+                . # # # .
+                . . # . .
+                . . . . .
+                `)
+            AnimationStage++
+            break
+        case 2:
+            basic.showLeds(`
+                . . . . .
+                . # # # .
+                . # # # .
+                . # # # .
+                . . . . .
+                `)
+            AnimationStage++
+            break
+        case 3:
+            basic.showLeds(`
+                . . # . .
+                . # # # .
+                # # # # #
+                . # # # .
+                . . # . .
+                `)
+            AnimationStage++
+            break
+        case 4:
+            basic.showLeds(`
+                # . # . #
+                . # # # .
+                # # # # #
+                . # # # .
+                # . # . #
+                `)
+            AnimationStage++
+            break
+        case 5:
+            basic.showLeds(`
+                # . # . #
+                . # # # .
+                # # . # #
+                . # # # .
+                # . # . #
+                `)
+            AnimationStage++
+            break
+        case 6:
+            basic.showLeds(`
+                # . # . #
+                . # . # .
+                # . . . #
+                . # . # .
+                # . # . #
+                `)
+            AnimationStage++
+            break
+        case 7:
+            basic.showLeds(`
+                # . # . #
+                . . . . .
+                # . . . #
+                . . . . .
+                # . # . #
+                `)
+            AnimationStage++
+            break
+        case 8:
+            basic.showLeds(`
+                # . . . #
+                . . . . .
+                . . . . .
+                . . . . .
+                # . . . #
+                `)
+            AnimationStage++
+            break
+        case 9:
+            basic.showLeds(`
+                . . . . .
+                . . . . .
+                . . . . .
+                . . . . .
+                . . . . .
+                `)
+            AnimationStage = 0
+            CommsBuffer = []
+            ActiveIDList = []
+            ActiveIDFlag = []
+            ActiveIDState = []
+            MBState = "Ready"
+            break
+    }
+}
+
 
 own_ID = control.deviceName().substr(3, ID_len)
 radio.setGroup(83)
@@ -267,3 +411,6 @@ ActiveIDList = []
 ActiveIDFlag = []
 ActiveIDState = []
 curr_page = 0
+full_formula = ""
+AnimationStage = 0
+ClockSpeed = 500
