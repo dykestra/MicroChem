@@ -1,106 +1,104 @@
+// Packet length defitions
+let check_len = 0
+let comm_type_len = 1
+let serial_len = 10
+let ID_len = 2
+let msg_type_len = 1
+
+// "Macros" for sending messages
+let MBHUB = 0
+let HUBMB = 1
+let MBMB = 2
+let STORE_ID = 0
+let NEED_ELEMENT = 1
+let CONFIRM_ELEMENT = 2
+let COLLISION = 3
+let CONFIRM_REACTION = 4
+let OK_STORE_ID = 0
+let NEW_ELEMENT = 1
+let REACT = 2
+let NO_REACT = 3
+
+// Other definitions
+let comm_type = 0
+let own_ID = ""
+let id_in = ""
+let msg_type = 0
+let message = ""
+let msg_len = 0
+
+let symbol_len = 0
+let str_elect_bal = ""
+let packet_ok = 0
+let chk_chars: number[] = []
+let electron_balance = 0
+let chem_symbol = ""
+let sym_num = 0
+let curr_page = 0
+let send_str = ""
+
 let Threshold_Power = 0
-let CmdProcess = ""
+let CmdProcess = 0
 let CommsBuffer: string[] = []
-let Loading_Bar = 0
 let value = ""
 let ActiveIDState: string[] = []
 let ActiveIDFlag: number[] = []
 let ActiveIDList: string[] = []
 let MBState = "Start-Up"
 
-radio.onDataPacketReceived(({ receivedString, signal }) => {
-    if (signal >= Threshold_Power) {
-        CommsBuffer.push(receivedString)
-        basic.showLeds(`
-            . . . . .
-            . . . . #
-            . . . # .
-            # . # . .
-            . # . . .
-            `)
-    } else {
-        Loading_Screen()
-    }
+
+input.onButtonPressed(Button.A, () => {
+    curr_page += -1
+    show_page()
 })
-function Loading_Screen() {
-    Loading_Bar += 1
-    if (Loading_Bar == 1) {
-        basic.showLeds(`
-            . . # . .
-            . . . . .
-            . . . . .
-            . . . . .
-            . . . . .
-            `)
-    } else if (Loading_Bar == 2) {
-        basic.showLeds(`
-            . . . . .
-            . . . # .
-            . . . . .
-            . . . . .
-            . . . . .
-            `)
-    } else if (Loading_Bar == 3) {
-        basic.showLeds(`
-            . . . . .
-            . . . . .
-            . . . . #
-            . . . . .
-            . . . . .
-            `)
-    } else if (Loading_Bar == 4) {
-        basic.showLeds(`
-            . . . . .
-            . . . . .
-            . . . . .
-            . . . # .
-            . . . . .
-            `)
-    } else if (Loading_Bar == 5) {
-        basic.showLeds(`
-            . . . . .
-            . . . . .
-            . . . . .
-            . . . . .
-            . . # . .
-            `)
-    } else if (Loading_Bar == 6) {
-        basic.showLeds(`
-            . . . . .
-            . . . . .
-            . . . . .
-            . # . . .
-            . . . . .
-            `)
-    } else if (Loading_Bar == 7) {
-        basic.showLeds(`
-            . . . . .
-            . . . . .
-            # . . . .
-            . . . . .
-            . . . . .
-            `)
+
+input.onButtonPressed(Button.B, () => {
+    curr_page += 1
+    show_page()
+})
+
+function show_page() {
+    if (curr_page == 0) {
+        basic.showString(chem_symbol)
     } else {
-        basic.showLeds(`
-            . . . . .
-            . # . . .
-            . . . . .
-            . . . . .
-            . . . . .
-            `)
-        Loading_Bar = 0
+        curr_page = 1
+        basic.showNumber(electron_balance)
     }
 }
 
-basic.forever(() => {
+
+radio.onDataPacketReceived(({ receivedString, signal }) => {
     switch (MBState) {
-        case "Start_Up":
-            // Need to include some kind of start-up process with HUB
-            // If start-up is ready, move to ready
-            MBState = "Ready"
+        case "Start-Up":
+            process_startup_messages(receivedString)
             break
         case "Ready":
-            radio.sendString("MBMB " + control.deviceSerialNumber())
+            if (signal >= Threshold_Power) {
+                CommsBuffer.push(receivedString)
+            }
+            break
+        default:
+    }
+})
+
+basic.forever(() => {
+    switch (MBState) {
+        case "Start-Up":
+            basic.showLeds(`
+			   . # . . .
+			   . . # . .
+			   . # # # .
+			   . . # . .
+			   . . . # .
+			   `)
+            if (chem_symbol != "") {
+                radio.setTransmitPower(0)
+                MBState = "Ready"
+            }
+            break
+        case "Ready":
+            basic.showString(chem_symbol)
+            radio.sendString(MBMB.toString() + own_ID)
             BufferProcessing()
             break
         case "Reaction":
@@ -110,7 +108,7 @@ basic.forever(() => {
             MBState = "Ready"
             break
         default:
-            MBState = "Start_Up"
+            MBState = "Start-Up"
     }
 
     basic.pause(500)
@@ -121,13 +119,13 @@ basic.forever(() => {
 /********************************************* */
 function BufferProcessing() {
     for (let value of CommsBuffer) {
-        CmdProcess = value.substr(0, 4)
-        if (CmdProcess == "MBMB") {
-            MBMBProcessing(value.substr(5, value.length))
-        } else if (CmdProcess == "MBHB") {
+        CmdProcess = parseInt(value.substr(0, comm_type_len))
+        if (CmdProcess == MBMB) {
+            MBMBProcessing(value.substr(comm_type_len, value.length))
+        } else if (CmdProcess == MBHUB) {
             serial.writeLine(value)
-        } else if (CmdProcess == "HBMB") {
-            HBMBProcessing(value.substr(5, value.length))
+        } else if (CmdProcess == HUBMB) {
+            HBMBProcessing(value.substr(comm_type_len, value.length))
         } else {
             serial.writeLine("Someone is drunk")
         }
@@ -181,7 +179,7 @@ function MBMBProcessing(ID: string) {
             case "Send Hub":
                 ActiveIDState[IDIndex] = "Waiting Hub"
                 radio.setTransmitPower(7)
-                radio.sendString("MBHB " + control.deviceSerialNumber() + "COLISSION" + ID)
+                radio.sendString(MBHUB.toString() + own_ID + COLLISION.toString() + ID + chem_symbol)
                 radio.setTransmitPower(0)
                 break
             case "Waiting Hub":
@@ -192,7 +190,6 @@ function MBMBProcessing(ID: string) {
         }
 
     } else {
-        //serial.writeLine("ID: " + ID + " not in array. Inserting...")
         ActiveIDList.push(ID)
         ActiveIDFlag.push(1)
         ActiveIDState.push("Initial State")
@@ -206,16 +203,67 @@ function HBMBProcessing(message: string) {
     // integration with Jukka
 }
 
+
+
+/*********************************** */
+/**Function processing messages at startup */
+/*********************************** */
+function process_startup_messages(msg_in: string) {
+    msg_len = msg_in.length
+    comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
+    id_in = msg_in.substr(check_len + comm_type_len, ID_len)
+    msg_type = parseInt(msg_in.substr(check_len + comm_type_len + ID_len, msg_type_len))
+    message = msg_in.substr(check_len + comm_type_len + ID_len + msg_type_len, msg_len - check_len - comm_type_len - ID_len - msg_type_len)
+    if (comm_type == HUBMB) {
+        if (id_in == own_ID) {
+            if (msg_type == OK_STORE_ID) {
+                chk_chars = [0, 3]
+            } else {
+                chk_chars = [0, 3, message.length - 1]
+            }
+            for (let ch of chk_chars) {
+                if (message.charAt(ch) == "#") {
+                    packet_ok = 1
+                } else {
+                    packet_ok = 0
+                }
+            }
+            if (packet_ok == 1) {
+                if (msg_type == OK_STORE_ID) {
+                    own_ID = message.substr(1, 2)
+                } else { //(msg_type == NEW_ELEMENT) {
+                    str_elect_bal = message.substr(1, 2)
+                    symbol_len = message.length - 5
+                    chem_symbol = message.substr(4, symbol_len)
+                    electron_balance = parseInt(str_elect_bal)
+                }
+            } else {
+                // Packet failed, request resend
+                radio.sendString(send_str)
+            }
+        }
+    }
+}
+
+
 function isInArray(value: string, array: string[]) {
     return array.indexOf(value) > -1;
 }
 
-radio.setGroup(66)
-radio.setTransmitPower(0)
-Loading_Bar = 0
+function initialise_element() {
+    send_str = MBHUB.toString() + own_ID + NEED_ELEMENT.toString() + "TEST" //REMOVE "TEST" LATER
+    radio.sendString(send_str)
+}
+
+
+own_ID = control.deviceName().substr(3, ID_len)
+radio.setGroup(83)
+radio.setTransmitPower(7) //for initialisation
+initialise_element()
 Threshold_Power = -63
 CommsBuffer = []
-CmdProcess = ""
+CmdProcess = 0
 ActiveIDList = []
 ActiveIDFlag = []
 ActiveIDState = []
+curr_page = 0
