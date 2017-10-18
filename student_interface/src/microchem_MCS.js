@@ -209,11 +209,15 @@ function HBMBProcessing(message: string) {
     msg_type = parseInt(message.substr(ID_len, msg_type_len))
     message = message.substr(ID_len + msg_type_len, msg_len - ID_len - msg_type_len)
     if (id_in == own_ID) {
+
+        // Establish index for message error handling 
         if (msg_type == OK_STORE_ID) {
             chk_chars = [0, 3]
         } else {
             chk_chars = [0, 3, message.length - 1]
         }
+
+        //Check message integrity
         for (let ch of chk_chars) {
             if (message.charAt(ch) == "#") {
                 packet_ok = 1
@@ -221,20 +225,28 @@ function HBMBProcessing(message: string) {
                 packet_ok = 0
             }
         }
+
+        // Message parsing
         if (packet_ok == 1) {
             if (msg_type == OK_STORE_ID) {
                 own_ID = message.substr(1, 2)
-            } else { //(msg_type == NEW_ELEMENT) {
-                str_elect_bal = message.substr(1, 2)
-                symbol_len = message.length - 5
-                chem_symbol = message.substr(4, symbol_len)
-                electron_balance = parseInt(str_elect_bal)
-            }
-        } else {
-            // Packet failed, request resend
-            radio.sendString(send_str)
+            } else if (msg_type == NEW_ELEMENT) {
+                process_new_element(message)
+            } else if (msg_type == REACT) {
+                process_new_element(message) //recycle code
+                MBState = "Reaction"
+            } //else if (msg_type == NO_REACT) {	
+            //}
         }
     }
+}
+
+
+function process_new_element(message: string) {
+    str_elect_bal = message.substr(1, 2)
+    symbol_len = message.length - 5
+    chem_symbol = message.substr(4, symbol_len)
+    electron_balance = parseInt(str_elect_bal)
 }
 
 
@@ -266,10 +278,7 @@ function process_startup_messages(msg_in: string) {
                 if (msg_type == OK_STORE_ID) {
                     own_ID = message.substr(1, 2)
                 } else { //(msg_type == NEW_ELEMENT) {
-                    str_elect_bal = message.substr(1, 2)
-                    symbol_len = message.length - 5
-                    chem_symbol = message.substr(4, symbol_len)
-                    electron_balance = parseInt(str_elect_bal)
+		    process_new_element(message)
                 }
             } else {
                 // Packet failed, request resend

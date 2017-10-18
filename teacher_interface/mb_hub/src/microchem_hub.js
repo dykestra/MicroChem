@@ -41,7 +41,7 @@ function get_id_alias() {
 
 function get_chem_data() {
     led_breathe()
-    serial.writeValue("1:" + id_in + ":TEST", 0)
+    serial.writeValue("1:" + id_in + ":TEST", 0) //TEMP
     //serial.writeString("0:"+id_in+":TEST")
     send_str = serial.readUntil(serial.delimiters(Delimiters.NewLine))
     str_electron_bal = send_str.substr(0, 2)
@@ -50,8 +50,59 @@ function get_chem_data() {
     basic.showString("S:")
 }
 
+// Fire serial when data with a "$" is received
+serial.onDataReceived(serial.delimiters(Delimiters.Dollar), () => {
+    let db_response = ""
+    let response = ""
+    let id_a = ""
+    let symbol = ""
+    db_response = serial.readUntil(serial.delimiters(Delimiters.NewLine))
+    id_a = db_response.substr(1,2)
+    if (db_response == "0") {
+	//  SEND NO_REACT to the microbit id_a
+	response = HUBMB.toString() + id_a + NO_REACT.toString()// + id_b
+	//basic.showString(response)
+	radio.sendString(response)
+    } else {
+	//  SEND REACT to the microbit id_a
+	str_electron_bal = db_response.substr(2, 2)
+	symbol = db_response.substr(4, send_str.length - 4)
+	response = "#" + str_electron_bal + "#" + symbol + "#"
+	response = HUBMB.toString() + id_a + REACT.toString() + response
+	basic.showString(response)
+	radio.sendString(response)
+    }
+})
+
+
+function send_collision_data(id_a: string, id_b: string ) {
+    led_breathe()
+    serial.writeValue("2:" + id_a +":"+ id_b, 0)
+}
+
+function get_collision_confirm(id_a: string, id_b: string ) {
+    let db_response = ""
+    let response = ""
+    led_breathe()
+    serial.writeValue("2:" + id_a +":"+ id_b, 0)
+    //serial.writeString("2:"+id_a+":"+id_b)
+    db_response = serial.readUntil(serial.delimiters(Delimiters.NewLine))
+    if (db_response == "0") {
+	//  SEND NO_REACT to the microbit id_a
+	response = HUBMB.toString() + id_a + NO_REACT.toString() + id_b
+	basic.showString(response)
+	radio.sendString(response)
+    } else {
+	//  SEND REACT to the microbit id_a
+	response = "#" + str_electron_bal + "#" + curr_symbol + "#"
+	response = HUBMB.toString() + id_a + REACT.toString() + response
+	basic.showString(response)
+	radio.sendString(response)
+    }
+}
+
+
 radio.onDataPacketReceived(({ receivedString: msg_in }) => {
-    //basic.showString(msg_in) //TEMP for testing
     msg_len = msg_in.length
     comm_type = parseInt(msg_in.substr(check_len, comm_type_len))
     id_in = msg_in.substr(check_len + comm_type_len, ID_len)
@@ -65,6 +116,11 @@ radio.onDataPacketReceived(({ receivedString: msg_in }) => {
 	} else if (msg_type == NEED_ELEMENT) {
             get_chem_data()
             send_chem_data()
+	} else if (msg_type == COLLISION) {
+	    let id_b = ""
+	    id_b = message
+	    //get_collision_confirm(id_in, id_b)
+	    send_collision_data(id_in, id_b )
 	}
     }
     show_S()
