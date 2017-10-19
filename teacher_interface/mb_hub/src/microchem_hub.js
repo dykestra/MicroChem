@@ -53,7 +53,6 @@ function get_chem_data(send_str: string, id_a: string, comm: number) {
         symbol = send_str.substr(2, send_str.length - 2)
     }
     send_str = "#" + str_valence + "#" + symbol + "#"
-    //basic.showString("S:")
     send_chem_data(send_str, id_a, comm)
     if (REACT_STATE == 1) {
         REACT_STATE = 0
@@ -71,43 +70,10 @@ serial.onDataReceived(serial.delimiters(Delimiters.Dollar), () => {
     id_a = db_response.substr(2, 2)
     let response = "" //TEST
     basic.showString("RE") //TEST
-    response = HUBMB.toString() + "22" + REACT.toString()  //TEST
-    radio.setGroup(83) //change channel to stop interference //TEST
-    basic.showString(response) //TEST
-    radio.sendString(response) //TEST
-    /*
-    if (db_response.substr(0,2) == "$0") {
-	basic.showString("x") // TEMP
-	//  SEND NO_REACT to the microbit id_a
-	//response = HUBMB.toString() + id_a + NO_REACT.toString()// + id_b
-	//basic.showString(response)
-	//radio.sendString(response)
-    } else {
-	//basic.showString("U:" + id_a)
-	//get_chem_data( "", id_a, REACT ) //TEST
-	let response = ""
-	basic.showString("R")
-	response = HUBMB.toString() + "00" + REACT.toString()  //TEST
-	radio.sendString(response)
-	//*let response = ""
-	let valence = ""
-	let smbl = ""
-	valence = db_response.substr(4, 2)
-	basic.showString("V:" + valence)
-	smbl = db_response.substr(6, send_str.length - 6)
-	if (valence != "" && smbl != "") {
-	//symbol = db_response.substr(3, send_str.length - 3)
-	//response = "#" + str_electron_bal + "#" + symbol + "#"
-	//response = HUBMB.toString() + id_a + REACT.toString() + response
-	    response = HUBMB.toString() + id_a + REACT.toString() + "#" + valence + "#" + smbl + "#"
-	    basic.showString("R:" + response)
-	    radio.sendString(response)
-	} else {
-	    basic.showString("F")
-	}
-	///
-    }*/
-    //radio.setGroup(83) //change channel back //TEST
+    response = HUBMB.toString() + "22" + REACT.toString()
+    radio.setGroup(83) //change channel to stop interference
+    //basic.showString(response) //TEST
+    radio.sendString(response)
 })
 
 
@@ -132,8 +98,6 @@ radio.onDataPacketReceived(({ receivedString: msg_in }) => {
             } else if (msg_type == NEED_ELEMENT) {
                 let send_string = ""
                 get_chem_data(send_string, id_in, NEW_ELEMENT)
-                //get_chem_data()
-                //send_chem_data()
             } else if (msg_type == COLLISION) {
                 let id_b = ""
                 id_b = message
@@ -163,11 +127,9 @@ function send_id_alias() {
 function send_chem_data(send_str: string, id_a: string, comm: number) {
     if (comm == NEW_ELEMENT) {
         send_str = HUBMB.toString() + id_a + NEW_ELEMENT.toString() + send_str
-    } else if (comm == REACT) {
-        basic.showString("R")
+    } else if (comm == REACT) { //REMOVE? - unnecessary if keep current REACT messages
         send_str = HUBMB.toString() + id_a + REACT.toString() + send_str
     }
-    //basic.showString(send_str)
     radio.sendString(send_str)
 }
 

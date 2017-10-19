@@ -235,7 +235,7 @@ class Scenario:
                                 self.master_table["valence"][x] = b'+0'
                                 self.master_table["valence"][y] = b'+0'
                                 
-                                # Send message to id_a
+                                # Send message about reaction
                                 i, = np.where(self.master_table["aliasID"] == id_a)
                                 #send_symbol = self.master_table["chem_symbol"][i][0]
                                 #send_valence = self.master_table["valence"][i][0]
@@ -259,7 +259,6 @@ class Scenario:
                                 self.s.write(b'$1' + id_b +b'\n')
                                 """
                                 master.update_element_bit_list(self.master_table)
-                                #subtable = [e for e in self.master_table if (e["aliasID"].decode('UTF-8') == id_a or e["aliasID"].decode('UTF-8') == id_b)]
                                 subtable = [e for e in self.master_table if (e["aliasID"] == id_a or e["aliasID"] == id_b)]
                                 print(subtable)
                                 master.trigger_reaction(elements=subtable)
@@ -274,23 +273,13 @@ class Scenario:
                         #  DROP
     
                 # Iterating collision table times
-                self.iterate_time_in_collision_list( max_ttl = 1024 )
+                self.iterate_time_in_collision_list( max_ttl = self.max_ttl )
     
-                #IF THE self.master_table UPDATED:
-                ##   UPDATE THE GUI WITH THE self.master_table DATA!
-    
-                # Make an event to update the GUI with this table every time this table gets updated
-                #  - a check in the while loop that sends the info conditional on it being OK
-                #   - the other code would be imported as a module for this
             except (KeyboardInterrupt, SystemExit):
                 self.s.close()
                 print("EXIT")
                 try:
                     exit(0)
                 except SystemExit:
-                    os._exit(0)
-    
-    
-            #finally:
-            #    s.close()
+                    os._exit(0)    
         print("Out of loop")
