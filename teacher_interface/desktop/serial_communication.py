@@ -2,6 +2,7 @@ import serial
 import numpy as np
 from pathlib import Path
 import os
+import time
 
 #the port will depend on your computer
 #for a raspberry pi it will probably be /dev/ttyACM0
@@ -35,7 +36,7 @@ else:
                                     ('chem_symbol', 'S10'), ('valence', 'S2')])
 
 ## Create the reaction table
-reaction_table = np.genfromtxt('elementsDB-v3.csv', delimiter=";", dtype=None)
+reaction_table = np.genfromtxt('elementsDB-v3.1.csv', delimiter=";", dtype=None)
 
 ## TESTING REACTIONS
 #message = b"ot#iz"
@@ -139,7 +140,6 @@ MB_collision_list = [[] for x in range(n_elements)]
 def add_to_collision_list( to_be_added  ):
     for i in range(len(MB_collision_list)):
         if not MB_collision_list[i]:
-            print("Empty list at position", i)
             MB_collision_list[i] = [to_be_added, 0]
             break
         else:
@@ -153,7 +153,6 @@ def search_collision_list( searchable ):
     for sublist in MB_collision_list:
         if sublist: # if sublist is not empty
             if sublist[0] == searchable:
-                print("Found it!", sublist)
                 return True
 
 # --------------------------------------------------        
@@ -163,8 +162,8 @@ def search_collision_list( searchable ):
 def is_reverse_in_collision_list( searchable ):
     #reverse = searchable[0:2] + searchable[5:] + searchable[4] + searchable[2:4]
     reverse = searchable[2:4] + searchable[0:2]
-    print("The reverse of ", searchable)
-    print("is", reverse)
+    #print("The reverse of ", searchable)
+    #print("is", reverse)
     for sublist in MB_collision_list:
         if sublist: # if sublist is not empty
             if sublist[0] == reverse:
@@ -186,6 +185,7 @@ def iterate_time_in_collision_list( max_ttl = 1024 ):
 
                 
 #TESTING THE LIST ============================ REMOVE
+"""
 # Add things to the list
 str_to_be_added = "1av3op"
 add_to_collision_list( str_to_be_added )
@@ -222,7 +222,7 @@ print(MB_collision_list)
 
 
 iterate_time_in_collision_list(max_ttl=1)
-
+"""
 # ============================ REMOVE
 
 #exit()
@@ -270,10 +270,11 @@ while not break_loop:
         # Element requests
         elif comm_type == ELEMENTREQ:
             i, = np.where(master_table["aliasID"] == id_in)
-            send_symbol = master_table["chem_symbol"][i][0]
-            send_valence = master_table["valence"][i][0]
-            print(send_valence + send_symbol + b'\n')
-            s.write(send_valence + send_symbol + b'\n')
+            if i:
+                send_symbol = master_table["chem_symbol"][i][0]
+                send_valence = master_table["valence"][i][0]
+                print(send_valence + send_symbol + b'\n')
+                s.write(send_valence + send_symbol + b'\n')
             #  find "id_in" in the master table, and pick the element given to it, if any
         # Reaction messages (collisions)
         elif comm_type == REACTION_CHECK:
@@ -309,21 +310,29 @@ while not break_loop:
 
                     # Send message to id_a
                     i, = np.where(master_table["aliasID"] == id_a)
-                    send_symbol = master_table["chem_symbol"][i][0]
-                    send_valence = master_table["valence"][i][0]
+                    #send_symbol = master_table["chem_symbol"][i][0]
+                    #send_valence = master_table["valence"][i][0]
     
-                    print(b'$1' + id_a + send_valence + send_symbol +b'\n')
-                    s.write(b'$1' + id_a + send_valence + send_symbol +b'\n') #OK message
+                    #print(b'$1' + id_a + send_valence + send_symbol +b'\n')
+                    #s.write(b'$1' + id_a + send_valence + send_symbol +b'\n')
+                    print(b'$1' + id_a  +b'\n')
+                    s.write(b'$1' + id_a  +b'\n')
+
+                    time.sleep(0.5)
+                    
                     # Send message to id_b
                     i, = np.where(master_table["aliasID"] == id_b)
-                    send_symbol = master_table["chem_symbol"][i][0]
-                    send_valence = master_table["valence"][i][0]
-    
-                    print(b'$1' + id_b + send_valence + send_symbol +b'\n')
-                    s.write(b'$1' + id_b + send_valence + send_symbol +b'\n') #OK messag
-                else:
-                    print("Reaction not allowed")
-                    s.write(b'$0'+b'\n') # 'NOT OK' message
+                    #send_symbol = master_table["chem_symbol"][i][0]
+                    #send_valence = master_table["valence"][i][0]
+                    
+                    #print(b'$1' + id_b + send_valence + send_symbol +b'\n')
+                    #s.write(b'$1' + id_b + send_valence + send_symbol +b'\n')
+                    print(b'$1' + id_b +b'\n')
+                    s.write(b'$1' + id_b +b'\n')
+                #else:
+                    #print("Reaction not allowed")
+                    #s.write(b'$0'+ id_a + b'\n') # 'NOT OK' message
+                    #s.write(b'$0'+ id_b + b'\n') # 'NOT OK' message
             else:
                 print("Both not reported collision yet.")
         else: #other case or broken message, drop message and request resend?
