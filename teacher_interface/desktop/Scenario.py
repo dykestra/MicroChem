@@ -19,6 +19,7 @@ class Scenario:
 
     s = serial.Serial(PORT)
     s.baudrate = BAUD
+    s.timeout = 0.5 # read timeout of 0.5 seconds
     s.parity = serial.PARITY_NONE
     s.databits = serial.EIGHTBITS
     s.stopbits = serial.STOPBITS_ONE
@@ -241,121 +242,124 @@ class Scenario:
     # ============================ REMOVE
 
     #exit()
-    def main_loop(self):
+    def main_loop(self, master):
         while not self.break_loop:
             try:
-                print(self.break_loop)
+                # print(self.break_loop)
 
 
                 #read a line from the microbit, decode it and
                 # strip the whitespace at the end
                 data = self.s.readline().rstrip()
-                #data_str = data.decode()
-                print(data)
-    
-                #split the data
-                data_s = data.split(b":")
-    
-                # Split the data to comm_type, ID, and message
-                # data_s[0] is comm_type, data_s[1] is ID, data_s[2] is the message
-                comm_type = int((data_s[0]).decode())
-                print("Comm type is:", comm_type)
-                id_in = data_s[1]
-                print("id_in", id_in)
-                message = data_s[2] ##SPLIT this message to parts with message.split(b"#")
-    
-                # Message handler
-                # ID alias creation
-                if comm_type == self.IDALIAS:
-                    SERIAL = id_in
-                    # Check the table for the serial, and allocate an ID number
-                    if SERIAL in self.master_table["serialNo"]:
-                        i, = np.where(self.master_table["serialNo"] == SERIAL)
-                        send_alias = self.master_table["aliasID"][i][0]
-                    else:
-                        if -1 in self.master_table["serialNo"]:
-                            i, = np.where(self.master_table["serialNo"] == -1)
+                if data:
+                    #data_str = data.decode()
+                    print(data)
+
+                    #split the data
+                    data_s = data.split(b":")
+
+                    # Split the data to comm_type, ID, and message
+                    # data_s[0] is comm_type, data_s[1] is ID, data_s[2] is the message
+                    comm_type = int((data_s[0]).decode())
+                    print("Comm type is:", comm_type)
+                    id_in = data_s[1]
+                    print("id_in", id_in)
+                    message = data_s[2] ##SPLIT this message to parts with message.split(b"#")
+
+                    # Message handler
+                    # ID alias creation
+                    if comm_type == self.IDALIAS:
+                        SERIAL = id_in
+                        # Check the table for the serial, and allocate an ID number
+                        if SERIAL in self.master_table["serialNo"]:
+                            i, = np.where(self.master_table["serialNo"] == SERIAL)
                             send_alias = self.master_table["aliasID"][i][0]
-                        else: # if no available row exists
-                            new_alias = bytes([self.master_table["aliasID"][-1][0],
-                                               self.master_table["aliasID"][-1][1]+1])
-                            np.append(self.master_table, [new_alias, SERIAL, self.next_ele, self.next_val])
-                            # HAVE TO KEEP TRACK OF HOW MANY ELEMENTS HAVE BEEN RECYCLED!
-                    print(send_alias)
-                    self.s.write(b'#'+SERIAL+b'#'+send_alias+b'#\n')
-                    # HAVE TO SEND THE SERIAL NUMBER AS WELL
-    
-                # Element requests
-                elif comm_type == self.ELEMENTREQ:
-                    i, = np.where(self.master_table["aliasID"] == id_in)
-                    if i:
-                        send_symbol = self.master_table["chem_symbol"][i][0]
-                        send_valence = self.master_table["valence"][i][0]
-                        print(send_valence + send_symbol + b'\n')
-                        self.s.write(send_valence + send_symbol + b'\n')
-                    #  find "id_in" in the master table, and pick the element given to it, if any
-                # Reaction messages (collisions)
-                elif comm_type == self.REACTION_CHECK:
-                    message_s = message.split(b"#")
-                    id_a = id_in
-                    id_b = message#_s[0]#message_s[1]
-                    print("id_a:", id_a)
-                    print("id_b:", id_b)
-                    pair = id_a + id_b
-                    pair_str = pair.decode()
-                    # Add to collision list
-                    self.add_to_collision_list( pair_str )
-    
-                    # Only process if reverse is already in collision list
-                    if self.is_reverse_in_collision_list( pair_str ):
-                        print("Both collided")
-                        x, = np.where(self.master_table["aliasID"] == id_a)
-                        symb_a = self.master_table["chem_symbol"][x][0] + self.master_table["valence"][x][0]
-                        print("Symb_a is:", symb_a)
-                        y, = np.where(self.master_table["aliasID"] == id_b)
-                        symb_b = self.master_table["chem_symbol"][y][0] + self.master_table["valence"][y][0]
-                        print("Symb_b is:", symb_b)
-                        # Get the indices of the elements, then check if the location is empty
-                        i, = np.where(self.reaction_table[0,:] == symb_a)
-                        j, = np.where(self.reaction_table[:,0] == symb_b)
-                        if self.reaction_table[j,i] != b"":
-                            print("Reaction accepted")
-                            #Update the master table, and send OK message
-                            self.master_table["chem_symbol"][x] = self.reaction_table[j,i]
-                            self.master_table["chem_symbol"][y] = self.reaction_table[j,i]
-                            self.master_table["valence"][x] = b'+0'
-                            self.master_table["valence"][y] = b'+0'
-    
-                            # Send message to id_a
-                            i, = np.where(self.master_table["aliasID"] == id_a)
-                            #send_symbol = self.master_table["chem_symbol"][i][0]
-                            #send_valence = self.master_table["valence"][i][0]
-    
-                            #print(b'$1' + id_a + send_valence + send_symbol +b'\n')
-                            #s.write(b'$1' + id_a + send_valence + send_symbol +b'\n')
-                            print(b'$1' + id_a  +b'\n')
-                            self.s.write(b'$1' + id_a  +b'\n')
-    
-                            time.sleep(0.5)
-    
-                            # Send message to id_b
-                            i, = np.where(self.master_table["aliasID"] == id_b)
-                            #send_symbol = self.master_table["chem_symbol"][i][0]
-                            #send_valence = self.master_table["valence"][i][0]
-    
-                            #print(b'$1' + id_b + send_valence + send_symbol +b'\n')
-                            #s.write(b'$1' + id_b + send_valence + send_symbol +b'\n')
-                            print(b'$1' + id_b +b'\n')
-                            self.s.write(b'$1' + id_b +b'\n')
-                        #else:
-                            #print("Reaction not allowed")
-                            #s.write(b'$0'+ id_a + b'\n') # 'NOT OK' message
-                            #s.write(b'$0'+ id_b + b'\n') # 'NOT OK' message
-                    else:
-                        print("Both not reported collision yet.")
-                else: #other case or broken message, drop message and request resend?
-                    print("STUB - BROKEN MESSAGE?")
-                    #  DROP
+                        else:
+                            if -1 in self.master_table["serialNo"]:
+                                i, = np.where(self.master_table["serialNo"] == -1)
+                                send_alias = self.master_table["aliasID"][i][0]
+                            else: # if no available row exists
+                                new_alias = bytes([self.master_table["aliasID"][-1][0],
+                                                   self.master_table["aliasID"][-1][1]+1])
+                                np.append(self.master_table, [new_alias, SERIAL, self.next_ele, self.next_val])
+                                # HAVE TO KEEP TRACK OF HOW MANY ELEMENTS HAVE BEEN RECYCLED!
+                        print(send_alias)
+                        self.s.write(b'#'+SERIAL+b'#'+send_alias+b'#\n')
+                        # HAVE TO SEND THE SERIAL NUMBER AS WELL
+
+                    # Element requests
+                    elif comm_type == self.ELEMENTREQ:
+                        i, = np.where(self.master_table["aliasID"] == id_in)
+                        if i:
+                            send_symbol = self.master_table["chem_symbol"][i][0]
+                            send_valence = self.master_table["valence"][i][0]
+                            print(send_valence + send_symbol + b'\n')
+                            self.s.write(send_valence + send_symbol + b'\n')
+                        #  find "id_in" in the master table, and pick the element given to it, if any
+                    # Reaction messages (collisions)
+                    elif comm_type == self.REACTION_CHECK:
+                        message_s = message.split(b"#")
+                        id_a = id_in
+                        id_b = message#_s[0]#message_s[1]
+                        print("id_a:", id_a)
+                        print("id_b:", id_b)
+                        pair = id_a + id_b
+                        pair_str = pair.decode()
+                        # Add to collision list
+                        self.add_to_collision_list( pair_str )
+
+                        # Only process if reverse is already in collision list
+                        if self.is_reverse_in_collision_list( pair_str ):
+                            print("Both collided")
+                            x, = np.where(self.master_table["aliasID"] == id_a)
+                            symb_a = self.master_table["chem_symbol"][x][0] + self.master_table["valence"][x][0]
+                            print("Symb_a is:", symb_a)
+                            y, = np.where(self.master_table["aliasID"] == id_b)
+                            symb_b = self.master_table["chem_symbol"][y][0] + self.master_table["valence"][y][0]
+                            print("Symb_b is:", symb_b)
+                            # Get the indices of the elements, then check if the location is empty
+                            i, = np.where(self.reaction_table[0,:] == symb_a)
+                            j, = np.where(self.reaction_table[:,0] == symb_b)
+                            if self.reaction_table[j,i] != b"":
+                                print("Reaction accepted")
+                                #Update the master table, and send OK message
+                                self.master_table["chem_symbol"][x] = self.reaction_table[j,i]
+                                self.master_table["chem_symbol"][y] = self.reaction_table[j,i]
+                                self.master_table["valence"][x] = b'+0'
+                                self.master_table["valence"][y] = b'+0'
+
+                                # Send message to id_a
+                                i, = np.where(self.master_table["aliasID"] == id_a)
+                                #send_symbol = self.master_table["chem_symbol"][i][0]
+                                #send_valence = self.master_table["valence"][i][0]
+
+                                #print(b'$1' + id_a + send_valence + send_symbol +b'\n')
+                                #s.write(b'$1' + id_a + send_valence + send_symbol +b'\n')
+                                print(b'$1' + id_a  +b'\n')
+                                self.s.write(b'$1' + id_a  +b'\n')
+
+                                time.sleep(0.5)
+
+                                # Send message to id_b
+                                i, = np.where(self.master_table["aliasID"] == id_b)
+                                #send_symbol = self.master_table["chem_symbol"][i][0]
+                                #send_valence = self.master_table["valence"][i][0]
+
+                                #print(b'$1' + id_b + send_valence + send_symbol +b'\n')
+                                #s.write(b'$1' + id_b + send_valence + send_symbol +b'\n')
+                                print(b'$1' + id_b +b'\n')
+                                self.s.write(b'$1' + id_b +b'\n')
+
+                                master.update_element_bit_list(self.master_table)
+                            #else:
+                                #print("Reaction not allowed")
+                                #s.write(b'$0'+ id_a + b'\n') # 'NOT OK' message
+                                #s.write(b'$0'+ id_b + b'\n') # 'NOT OK' message
+                        else:
+                            print("Both not reported collision yet.")
+                    else: #other case or broken message, drop message and request resend?
+                        print("STUB - BROKEN MESSAGE?")
+                        #  DROP
     
                 # Iterating collision table times
                 self.iterate_time_in_collision_list( max_ttl = 1024 )

@@ -262,7 +262,7 @@ class TeacherInterfaceGUI:
             self.thread.join()
         print(self.scenario_file)
         self.scenario_obj = sc.Scenario(self, scenario_file=self.scenario_file)
-        self.thread = Thread(target=self.scenario_obj.main_loop)
+        self.thread = Thread(target=self.scenario_obj.main_loop, kwargs=dict(master=self))
         self.thread.setDaemon(True)
         self.thread.start()
 
