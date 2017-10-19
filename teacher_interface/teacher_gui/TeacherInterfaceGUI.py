@@ -13,6 +13,10 @@ class TeacherInterfaceGUI:
 
     CURRENT_DIR = os.path.dirname(__file__)
     IMAGE_DIR = os.path.join(CURRENT_DIR, 'images')
+    SCENARIOS_DIR = os.path.join(CURRENT_DIR, 'scenarios')
+
+    INFORMATION_FILE = os.path.join(CURRENT_DIR, 'informationDBv2.csv')
+    SCENARIOS_FILE = os.path.join(SCENARIOS_DIR, 'scenarios.csv')
 
     def __init__(self, master):
         # customize root object
@@ -129,6 +133,10 @@ class TeacherInterfaceGUI:
         self.reaction_frame.pack(side=LEFT, fill="both", expand="false")
         self.reaction_frame.pack_propagate(0)
 
+    def trigger_reaction(self):
+        """ Triggers a reaction which is displayed in the reaction frame """
+
+
     def add_info_frame(self):
         """ Frame contains 
             - information about the element/compound on whichever ElementBit has been selected in the list
@@ -149,7 +157,7 @@ class TeacherInterfaceGUI:
     def read_info_from_file(self):
         """ reads the whole information table from file into memory"""
         self.info_table = []
-        with open(os.path.join(self.CURRENT_DIR, 'information.csv'), 'rt') as info_File:
+        with open(self.INFORMATION_FILE, 'rt') as info_File:
             reader = csv.DictReader(info_File)
 
             for row in reader:
@@ -191,11 +199,55 @@ class TeacherInterfaceGUI:
     def add_scenarios_page(self, nb):
         """ Load Scenarios tab has
                 - list of scenarios to choose from
-                - description panel for selected scenario
                 - button to load selected scenario """
 
         self.scenarios_page = ttk.Frame(nb, width=1000, height=600)
+
+        self.scenarios_tree = ttk.Treeview(self.scenarios_page, show='headings', columns=('name', 'desc', 'nbits'), selectmode="browse")
+
+        self.scenarios_tree.column('name', width=100)
+        self.scenarios_tree.heading('name', text='Scenario')
+        self.scenarios_tree.column('desc', width=400)
+        self.scenarios_tree.heading('desc', text='Description')
+        self.scenarios_tree.column('nbits', width=120)
+        self.scenarios_tree.heading('nbits', text='No. ElementBits')
+
+        self.read_scenarios_from_file()
+
+        self.scenarios_tree.pack(pady=20)
+        self.scenarios_tree.bind("<<TreeviewSelect>>", self.on_scenario_tree_select)
+
+        self.load_scenario_button = ttk.Button(self.scenarios_page, command=self.load_scenario, text="Load Scenario", state="disabled")
+        self.load_scenario_button.pack()
+
         nb.add(self.scenarios_page, text="Load Scenario")
+
+
+    def read_scenarios_from_file(self):
+        """ reads the list of scenarios from file into a list of ordered dicts"""
+        self.scenarios_list = []
+        with open(self.SCENARIOS_FILE, 'rt') as scenarios_file:
+            reader = csv.DictReader(scenarios_file)
+
+            for row in reader:
+                self.scenarios_list.append(OrderedDict(sorted(row.items(),
+                                                key=lambda item: reader.fieldnames.index(item[0]))))
+
+        for s in self.scenarios_list:
+            self.scenarios_tree.insert('', 'end', text=s['File'], values=([s['Name'], s['Description'], s['No. ElementBits']]))
+
+
+    def on_scenario_tree_select(self, event):
+        """ set currently selected scenario and enable load scenario button"""
+
+        selection = self.scenarios_tree.selection()[0]
+        self.scenario_file = os.path.join(self.SCENARIOS_DIR, self.scenarios_tree.item(selection)['text'])
+        self.load_scenario_button.state(['!disabled'])
+
+    def load_scenario(self):
+        """ load scenario from file """
+        print (self.scenario_file)
+
 
 
 root = tk.ThemedTk()
