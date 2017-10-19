@@ -3,7 +3,7 @@ Main Script to launch Teacher Interface GUI
 """
 
 import os
-from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, Message
+from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, CENTER, E, Message, StringVar
 from ttkthemes import themed_tk as tk
 import csv
 from collections import OrderedDict
@@ -47,6 +47,7 @@ class TeacherInterfaceGUI:
         """Add custom styling here"""
         style = ttk.Style()
         style.configure("Groove.TFrame", relief="groove")
+        style.configure('Log.Treeview', rowheight=30)
 
     def add_heading_area(self, master):
         """Header area with logo"""
@@ -89,12 +90,6 @@ class TeacherInterfaceGUI:
         self.element_bit_tree.column('valence', width=50)
         self.element_bit_tree.heading('valence', text='Valence')
 
-        for x in range(0,10):
-            if x<5:
-                self.element_bit_tree.insert('', 'end', values=(str(x) + ' H x'))
-            else:
-                self.element_bit_tree.insert('', 'end', values=(str(x) + ' O x'))
-
         self.element_bit_tree.pack()
         self.element_bit_tree.bind("<<TreeviewSelect>>", self.on_element_bit_tree_select)
 
@@ -130,21 +125,47 @@ class TeacherInterfaceGUI:
         self.reaction_frame_label.pack(pady=10)
 
         self.current_reactions_frame = ttk.Frame(self.reaction_frame)
+        self.current_reaction_label_string = StringVar()
+        self.current_reaction_label_string.set('')
+        self.current_reaction_label = Message(self.current_reactions_frame,
+                                                  textvariable=self.current_reaction_label_string,
+                                                  background="white", relief="raised", foreground="#535d6d", aspect=700)
+        self.current_reaction_label.pack(ipady=10, padx=1, fill="x")
         self.current_reactions_frame.pack(padx=5, side=TOP, fill="both", expand="true")
 
         self.reaction_log_frame = ttk.Frame(self.reaction_frame, height="250", style="Groove.TFrame")
         self.reaction_log_frame_label = ttk.Label(self.reaction_log_frame, text="Reaction Log")
         self.reaction_log_frame_label.pack(pady=10)
+
+        self.reaction_log_tree = ttk.Treeview(self.reaction_log_frame, selectmode="browse", style="Log.Treeview")
+        self.reaction_log_tree.pack(fill="x", padx=10, ipady=15)
+
         self.reaction_log_frame.pack(padx=5, pady=5, side=BOTTOM, fill="both", expand="false")
         self.reaction_log_frame.pack_propagate(0)
 
         self.reaction_frame.pack(side=LEFT, fill="both", expand="false")
         self.reaction_frame.pack_propagate(0)
 
-    def trigger_reaction(self):
+    def trigger_reaction(self, elements):
         """ Triggers a reaction which is displayed in the reaction frame """
 
+        # add previous reaction to log
+        old_reaction = self.current_reaction_label_string.get()
+        if old_reaction != '':
+            self.add_to_log(old_reaction)
 
+        # update label to current reaction
+        reaction_str = " + ".join([e['prev_symbol'].decode('UTF-8') for e in elements])
+        reaction_str += " => "
+        reaction_str += elements[0]['chem_symbol'].decode('UTF-8')
+
+        print(reaction_str)
+        self.current_reaction_label_string.set(reaction_str)
+
+    def add_to_log(self, old_reaction):
+        """ add old_reaction to the reaction log """
+
+        self.reaction_log_tree.insert('', '0', text=old_reaction)
 
 
     def add_info_frame(self):
