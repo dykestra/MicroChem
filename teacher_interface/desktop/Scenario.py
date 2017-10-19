@@ -19,7 +19,7 @@ class Scenario:
 
     s = serial.Serial(PORT)
     s.baudrate = BAUD
-    s.timeout = 0.5 # read timeout of 0.5 seconds
+    s.timeout = 0.2 # read timeout of 0.5 seconds
     s.parity = serial.PARITY_NONE
     s.databits = serial.EIGHTBITS
     s.stopbits = serial.STOPBITS_ONE
@@ -35,7 +35,7 @@ class Scenario:
     break_loop = False
 
     n_elements = 10
-    max_ttl = 1024
+    max_ttl = 100
 
     def __init__(self, master, scenario_file):
 
@@ -62,40 +62,16 @@ class Scenario:
         ## Create the reaction table
         self.reaction_table = np.genfromtxt(os.path.join(CURRENT_DIR, 'elementsDB-v3.1.csv'), delimiter=";", dtype=None)
 
-        ## TESTING REACTIONS
-        #message = b"ot#iz"
-        #message_s = message.split(b"#")
-        #id_a = message_s[0]
-        #id_b = message_s[1]
-        #x, = np.where(self.master_table["aliasID"] == id_a)
-        #symb_a = self.master_table["chem_symbol"][x][0] + self.master_table["valence"][x][0]
-        #y, = np.where(self.master_table["aliasID"] == id_b)
-        #symb_b = self.master_table["chem_symbol"][y][0] + self.master_table["valence"][y][0]
-        #print(symb_b)
+        # Collision list setup
+        # --------------------------------------------------
+        self.MB_collision_list = [[] for x in range(self.n_elements)]
+        
+        ## Ready message
+        print("Ready.")
 
-        ##GET INDEX OF symb_a, then check if reaction_table[symb_b][symb_a] is empty or not
-        ## -> NOT SURE how to find the index for id_a...
-        #i, = np.where(reaction_table[0,:] == symb_a)
-        #j, = np.where(reaction_table[:,0] == symb_b)
-        #print(i,j)
-        #print(reaction_table[j,i])
-        #if reaction_table[j,i] != b"":
-        #    print("Reaction accepted")
-        #    ##UPDATE THE MASTER TABLE, and send OK message
-        #    self.master_table["chem_symbol"][x] = reaction_table[j,i]
-        #    self.master_table["chem_symbol"][y] = reaction_table[j,i]
-        #    self.master_table["valence"][x] = b'+0'
-        #    self.master_table["valence"][y] = b'+0'
-        #    print(self.master_table)
-        #else:
-        #    print("Reaction not allowed")
-
-
-        #exit()
-
+        """        
         #TESTING
         SERIAL = b'ad'
-
         if SERIAL in self.master_table["aliasID"]:
             i, = np.where(self.master_table["aliasID"]==SERIAL)
             send_alias = self.master_table["chem_symbol"][i][0]
@@ -103,9 +79,9 @@ class Scenario:
             i, = np.where(self.master_table["serialNo"] == -1)
             send_alias = self.master_table["aliasID"][i][0]
         print("Alias is", send_alias)
+
         #new_alias = bytes([self.master_table["aliasID"][-1][0],self.master_table["aliasID"][-1][1]+1])
         #print("Last alias is", new_alias)
-
 
         ##STRING TO BYTES SAMPLE -> "str.encode()" and ".decode()"
         #string = "text"
@@ -113,43 +89,15 @@ class Scenario:
         #bytestr = str.encode(string)
         #print(bytestr)
         #print(bytestr.decode())
-
-
-        # NEED:
-        # 1. Send the ID numbers for the MBs
-        #    -> need to have an if loop for this
-        # 2. Send the element numbers
-        #    - either due to request for element, OR as push for elements
-        #      -> either could be done using the same element int system as used,
-        #         as when pushing, whatever int the ID (alias) asks for, it can be
-        #         overriden based on the table that has the alias
-        # 3. Check data tables for acceptable combinations
-        #    -> Send the combinations
-        # -> need to make a handler if loop for determining which case should run!
-        # 4. OTHER - drop message and request resend?
-
-        # Master table (ID table) sample:
-        # AT START:
-        #   aliasID  serialNo    chem_symbol   valence
-        #   aa       1234567890  H             +1
-        #   ab       1234567891  O             -2
-        #   ac       1234567892  H             +1
-        # AFTER MATCH:
-        #   aliasID  serialNo    chem_symbol   valence
-        #   aa       1234567890  H2O           0
-        #   ab       1234567891  H2O           0
-        #   ac       1234567892  H2O           0
-
-
-
-        self.MB_collision_list = [[] for x in range(self.n_elements)]
-        #print(self.MB_collision_list)
-
-
-
+        """
+        
+    # --------------------------------------------------
+    # Function to exit the main loop
+    # --------------------------------------------------
     def force_quit_main_loop(self):
         self.break_loop = True
         print("BREAKING LOOP")
+
     # --------------------------------------------------
     # Function to add to the list of collisions
     # --------------------------------------------------
@@ -176,14 +124,10 @@ class Scenario:
     # returns true if exists in the list
     # --------------------------------------------------
     def is_reverse_in_collision_list(self, searchable ):
-        #reverse = searchable[0:2] + searchable[5:] + searchable[4] + searchable[2:4]
         reverse = searchable[2:4] + searchable[0:2]
-        #print("The reverse of ", searchable)
-        #print("is", reverse)
         for sublist in self.MB_collision_list:
             if sublist: # if sublist is not empty
                 if sublist[0] == reverse:
-                    print("Found the reverse!", sublist)
                     return True
 
 
@@ -199,49 +143,10 @@ class Scenario:
                 else:
                     sublist[1] = sublist[1] + 1
 
-
-    #TESTING THE LIST ============================ REMOVE
-    """
-    # Add things to the list
-    str_to_be_added = "1av3op"
-    add_to_collision_list( str_to_be_added )
-    print(self.MB_collision_list)
     
-    # Search the list
-    searchable = "1av3op"
-    search_collision_list( searchable )
-    
-    
-    # FILL LIST
-    for i in range(len(self.MB_collision_list)):
-        if not self.MB_collision_list[i]:
-            print("Filling position", i)
-            self.MB_collision_list[i] = [str_to_be_added, 0]
-    
-    # Adding to a full list
-    str_to_be_added = "1ad3ed"
-    add_to_collision_list( str_to_be_added )
-    print(len(self.MB_collision_list))
-    print(self.MB_collision_list)
-    
-    # Iterate time in list
-    iterate_time_in_collision_list()
-    print(self.MB_collision_list)
-    
-    if is_reverse_in_collision_list( "2:op:av" ):
-        print("Yeah man")
-    
-    # Clearing parts of the list
-    iterate_time_in_collision_list(max_ttl=1)
-    #rm_old_messages_from_list(1)
-    print(self.MB_collision_list)
-    
-    
-    iterate_time_in_collision_list(max_ttl=1)
-    """
-    # ============================ REMOVE
-
-    #exit()
+    #==================================================
+    # The main loop
+    #==================================================
     def main_loop(self, master):
         while not self.break_loop:
             try:
@@ -340,7 +245,8 @@ class Scenario:
                                 print(b'$1' + id_a  +b'\n')
                                 self.s.write(b'$1' + id_a  +b'\n')
 
-                                time.sleep(0.5)
+                                """
+                                time.sleep(0.5) #TEST
 
                                 # Send message to id_b
                                 i, = np.where(self.master_table["aliasID"] == id_b)
@@ -349,9 +255,9 @@ class Scenario:
 
                                 #print(b'$1' + id_b + send_valence + send_symbol +b'\n')
                                 #s.write(b'$1' + id_b + send_valence + send_symbol +b'\n')
-                                print(b'$1' + id_b +b'\n')
+                                print(b'$1' + id_b +b'\n')a
                                 self.s.write(b'$1' + id_b +b'\n')
-
+                                """
                                 master.update_element_bit_list(self.master_table)
                                 #subtable = [e for e in self.master_table if (e["aliasID"].decode('UTF-8') == id_a or e["aliasID"].decode('UTF-8') == id_b)]
                                 subtable = [e for e in self.master_table if (e["aliasID"] == id_a or e["aliasID"] == id_b)]

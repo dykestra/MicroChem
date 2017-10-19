@@ -80,7 +80,7 @@ radio.onDataPacketReceived(({ receivedString, signal }) => {
 basic.forever(() => {
     switch (MBState) {
         case "Start-Up":
-	    ClockSpeed = 500
+            ClockSpeed = 500
             basic.showLeds(`
 			   . # . . .
 			   . . # . .
@@ -88,9 +88,11 @@ basic.forever(() => {
 			   . . # . .
 			   . . . # .
 			   `)
+            radio.setTransmitPower(7)
+            initialise_element()
             if (chem_symbol != "") {
                 radio.setTransmitPower(0)
-		if (electron_balance > 0) {
+                if (electron_balance > 0) {
                     full_formula = chem_symbol + "+" + electron_balance.toString()
                 } else {
                     full_formula = chem_symbol + electron_balance.toString()
@@ -99,18 +101,20 @@ basic.forever(() => {
             }
             break
         case "Ready":
-	    ClockSpeed = 500	
+            ClockSpeed = 500
             basic.showString(full_formula[curr_page])
             radio.sendString(MBMB.toString() + own_ID)
             BufferProcessing()
             break
         case "Reaction":
-	    ClockSpeed = 50	
+            ClockSpeed = 50
             // Need a function that:
             // -> Create screen animation for reaction
             // -> Clean all matrices
-	    ReactionAnimation()
-            MBState = "Ready"
+            ReactionAnimation()
+            if (AnimationStage == 0) {
+                MBState = "Start-Up"
+            }
             break
         default:
             MBState = "Start-Up"
@@ -127,12 +131,8 @@ function BufferProcessing() {
         CmdProcess = parseInt(value.substr(0, comm_type_len))
         if (CmdProcess == MBMB) {
             MBMBProcessing(value.substr(comm_type_len, value.length))
-        } else if (CmdProcess == MBHUB) {
-            serial.writeLine(value)
         } else if (CmdProcess == HUBMB) {
             HBMBProcessing(value.substr(comm_type_len, value.length))
-        } else {
-            serial.writeLine("Someone is drunk")
         }
     }
     CommsBuffer = []
@@ -238,6 +238,11 @@ function HBMBProcessing(message: string) {
             } //else if (msg_type == NO_REACT) {	
             //}
         }
+    } else {
+        if (msg_type == REACT) {
+            chem_symbol = ""
+            MBState = "Reaction"
+        }
     }
 }
 
@@ -278,7 +283,7 @@ function process_startup_messages(msg_in: string) {
                 if (msg_type == OK_STORE_ID) {
                     own_ID = message.substr(1, 2)
                 } else { //(msg_type == NEW_ELEMENT) {
-		    process_new_element(message)
+                    process_new_element(message)
                 }
             } else {
                 // Packet failed, request resend
@@ -294,7 +299,7 @@ function isInArray(value: string, array: string[]) {
 }
 
 function initialise_element() {
-    send_str = MBHUB.toString() + own_ID + NEED_ELEMENT.toString() + "TEST" //REMOVE "TEST" LATER
+    send_str = MBHUB.toString() + own_ID + NEED_ELEMENT.toString()
     radio.sendString(send_str)
 }
 
