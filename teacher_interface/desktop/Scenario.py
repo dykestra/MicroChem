@@ -51,11 +51,11 @@ class Scenario:
         if scen_file.exists():
             self.master_table = np.genfromtxt(scenario_file, delimiter=",", \
                                          dtype=[('aliasID', 'S2'),('serialNo', 'i4'),\
-                                                ('chem_symbol', 'S10'), ('valence', 'S2')])
+                                                ('chem_symbol', 'S10'), ('valence', 'S2'), ('prev_symbol', 'S10')])
         else:
             self.master_table = np.array([(b'aa',-1,b'',b'')],\
                                      dtype=[('aliasID', 'S2'),('serialNo', 'i4'),\
-                                            ('chem_symbol', 'S10'), ('valence', 'S2')])
+                                            ('chem_symbol', 'S10'), ('valence', 'S2'), ('prev_symbol', 'S10')])
 
         master.update_element_bit_list(self.master_table)
 
@@ -323,11 +323,13 @@ class Scenario:
                             if self.reaction_table[j,i] != b"":
                                 print("Reaction accepted")
                                 #Update the master table, and send OK message
+                                self.master_table["prev_symbol"][x] = self.master_table["chem_symbol"][x]
+                                self.master_table["prev_symbol"][y] = self.master_table["chem_symbol"][y]
                                 self.master_table["chem_symbol"][x] = self.reaction_table[j,i]
                                 self.master_table["chem_symbol"][y] = self.reaction_table[j,i]
                                 self.master_table["valence"][x] = b'+0'
                                 self.master_table["valence"][y] = b'+0'
-
+                                
                                 # Send message to id_a
                                 i, = np.where(self.master_table["aliasID"] == id_a)
                                 #send_symbol = self.master_table["chem_symbol"][i][0]
@@ -351,6 +353,10 @@ class Scenario:
                                 self.s.write(b'$1' + id_b +b'\n')
 
                                 master.update_element_bit_list(self.master_table)
+                                #subtable = [e for e in self.master_table if (e["aliasID"].decode('UTF-8') == id_a or e["aliasID"].decode('UTF-8') == id_b)]
+                                subtable = [e for e in self.master_table if (e["aliasID"] == id_a or e["aliasID"] == id_b)]
+                                print(subtable)
+                                master.trigger_reaction(elements=subtable)
                             #else:
                                 #print("Reaction not allowed")
                                 #s.write(b'$0'+ id_a + b'\n') # 'NOT OK' message
