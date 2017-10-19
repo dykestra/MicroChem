@@ -7,6 +7,11 @@ from tkinter import PhotoImage, ttk, LEFT, RIGHT, TOP, BOTTOM, Message
 from ttkthemes import themed_tk as tk
 import csv
 from collections import OrderedDict
+import sys
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+from desktop import Scenario as sc
+from threading import Thread
+
 
 class TeacherInterfaceGUI:
     """ Main GUI class """
@@ -17,6 +22,8 @@ class TeacherInterfaceGUI:
 
     INFORMATION_FILE = os.path.join(CURRENT_DIR, 'informationDBv2.csv')
     SCENARIOS_FILE = os.path.join(SCENARIOS_DIR, 'scenarios.csv')
+
+    scenario_obj = None
 
     def __init__(self, master):
         # customize root object
@@ -103,7 +110,8 @@ class TeacherInterfaceGUI:
 
         # repopulate tree
         for item in new_list:
-            item_values = " ".join([item['aliasID'].decode('UTF-8'), item['chem_symbol'].decode('UTF-8'), item['valence'].decode('UTF-8')])
+            item_values = " ".join([item['aliasID'].decode('UTF-8'), item['chem_symbol'].decode('UTF-8'),
+                                    item['valence'].decode('UTF-8')])
             self.element_bit_tree.insert('', 'end', values=item_values)
 
     def on_element_bit_tree_select(self, event):
@@ -137,6 +145,8 @@ class TeacherInterfaceGUI:
         """ Triggers a reaction which is displayed in the reaction frame """
 
 
+
+
     def add_info_frame(self):
         """ Frame contains 
             - information about the element/compound on whichever ElementBit has been selected in the list
@@ -164,8 +174,9 @@ class TeacherInterfaceGUI:
                 self.info_table.append(OrderedDict(sorted(row.items(),
                                                 key=lambda item: reader.fieldnames.index(item[0]))))
 
-
     def info_frame_update(self, selected_symbol):
+        """ update info frame to display info about selected element/compound """
+
         # get relevant info from table
         info_results = [x for x in self.info_table if x['Symbol']==selected_symbol]
         res = info_results[0]
@@ -188,7 +199,6 @@ class TeacherInterfaceGUI:
             self.info_entries.append(info)
             info.pack(ipadx=5, ipady=5, pady=10)
 
-
     def add_options_page(self, nb):
         """ Options tab has
                 - list of fields to include in information panel """
@@ -203,7 +213,8 @@ class TeacherInterfaceGUI:
 
         self.scenarios_page = ttk.Frame(nb, width=1000, height=600)
 
-        self.scenarios_tree = ttk.Treeview(self.scenarios_page, show='headings', columns=('name', 'desc', 'nbits'), selectmode="browse")
+        self.scenarios_tree = ttk.Treeview(self.scenarios_page, show='headings', columns=('name', 'desc', 'nbits'),
+                                           selectmode="browse")
 
         self.scenarios_tree.column('name', width=100)
         self.scenarios_tree.heading('name', text='Scenario')
@@ -217,11 +228,11 @@ class TeacherInterfaceGUI:
         self.scenarios_tree.pack(pady=20)
         self.scenarios_tree.bind("<<TreeviewSelect>>", self.on_scenario_tree_select)
 
-        self.load_scenario_button = ttk.Button(self.scenarios_page, command=self.load_scenario, text="Load Scenario", state="disabled")
+        self.load_scenario_button = ttk.Button(self.scenarios_page, command=self.load_scenario, text="Load Scenario",
+                                               state="disabled")
         self.load_scenario_button.pack()
 
         nb.add(self.scenarios_page, text="Load Scenario")
-
 
     def read_scenarios_from_file(self):
         """ reads the list of scenarios from file into a list of ordered dicts"""
@@ -234,8 +245,8 @@ class TeacherInterfaceGUI:
                                                 key=lambda item: reader.fieldnames.index(item[0]))))
 
         for s in self.scenarios_list:
-            self.scenarios_tree.insert('', 'end', text=s['File'], values=([s['Name'], s['Description'], s['No. ElementBits']]))
-
+            self.scenarios_tree.insert('', 'end', text=s['File'],
+                                       values=([s['Name'], s['Description'], s['No. ElementBits']]))
 
     def on_scenario_tree_select(self, event):
         """ set currently selected scenario and enable load scenario button"""
@@ -246,7 +257,15 @@ class TeacherInterfaceGUI:
 
     def load_scenario(self):
         """ load scenario from file """
-        print (self.scenario_file)
+        if self.scenario_obj:
+            self.scenario_obj.force_quit_main_loop()
+            self.thread.join()
+        print(self.scenario_file)
+        self.scenario_obj = sc.Scenario(self, scenario_file=self.scenario_file)
+        self.thread = Thread(target=self.scenario_obj.main_loop)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
 
 
 
