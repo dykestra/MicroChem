@@ -33,9 +33,8 @@ let curr_symbol = ""
 let REACT_STATE = 0
 
 function get_id_alias() {
-    led_breathe()
+    led_flicker()
     serial.writeValue("0:" + serial_in, 0)
-    //serial.writeString("0:"+id_in+":TEST")
     send_str = serial.readUntil(serial.delimiters(Delimiters.NewLine))
     send_str = "#" + serial_in + "#" + send_str + "#"
     basic.showString("S:")
@@ -44,10 +43,9 @@ function get_id_alias() {
 function get_chem_data(send_str: string, id_a: string, comm: number) {
     let str_valence = ""
     let symbol = ""
-    led_breathe()
+    led_flicker()
     while (str_valence == "" || symbol == "") {
-        serial.writeValue("1:" + id_a + ":TEST", 0) //TEMP
-        //serial.writeString("0:"+id_a+":TEST")
+        serial.writeValue("1:" + id_a + ":TEST", 0)
         send_str = serial.readUntil(serial.delimiters(Delimiters.NewLine))
         str_valence = send_str.substr(0, 2)
         symbol = send_str.substr(2, send_str.length - 2)
@@ -63,22 +61,23 @@ function get_chem_data(send_str: string, id_a: string, comm: number) {
 // Fire serial when data with a "$" is received
 serial.onDataReceived(serial.delimiters(Delimiters.Dollar), () => {
     radio.setGroup(82) //change channel to stop interference
-    REACT_STATE = 1
     let db_response = ""
-    let id_a = ""
     db_response = serial.readUntil(serial.delimiters(Delimiters.NewLine))
-    id_a = db_response.substr(2, 2)
-    let response = "" //TEST
-    basic.showString("RE") //TEST
-    response = HUBMB.toString() + "22" + REACT.toString()
-    radio.setGroup(83) //change channel to stop interference
-    //basic.showString(response) //TEST
-    radio.sendString(response)
+    if (db_response.substr(0,2) == '$1') { //TEST
+	REACT_STATE = 1
+	let id_a = ""
+	id_a = db_response.substr(2, 2)
+	let response = ""
+	led_flicker( 20, 25 ) //TEST
+	response = HUBMB.toString() + "22" + REACT.toString()
+	radio.sendString(response)
+    }
+    radio.setGroup(83) //change channel back
 })
 
 
 function send_collision_data(id_a: string, id_b: string) {
-    led_breathe()
+    led_flicker()
     serial.writeValue("2:" + id_a + ":" + id_b, 0)
 }
 
@@ -133,22 +132,44 @@ function send_chem_data(send_str: string, id_a: string, comm: number) {
     radio.sendString(send_str)
 }
 
-function led_breathe() {
-    led.setBrightness(255)
-    basic.pause(100)
-    led.setBrightness(192)
-    basic.pause(100)
-    led.setBrightness(127)
-    basic.pause(100)
-    led.setBrightness(61)
-    basic.pause(100)
-    led.setBrightness(127)
-    basic.pause(100)
-    led.setBrightness(192)
-    basic.pause(100)
+
+// Flicker the LEDs to show message received
+function led_flicker( low_bright = 61, pause_time = 50 ) {
+    led.setBrightness(low_bright)
+    basic.pause(50)
     led.setBrightness(255)
 }
 
-radio.setGroup(83)
+
+//--------------------------------------------------
+//     Forever loop to re-broadcast REACT command
+//--------------------------------------------------
+basic.forever(() => {
+    if (REACT_STATE == 1) {
+	//Rebroadcast the REACT command
+	let response = ""
+	led_flicker( 20, 25 )
+	response = HUBMB.toString() + "22" + REACT.toString()
+	radio.sendString(response)
+    }
+})
+
+
+//--------------------------------------------------
+//     Start receiving only when A pressed
+//--------------------------------------------------
+input.onButtonPressed(Button.A, () => {
+    radio.setGroup(83) //Set group to same with MB elements
+    show_S()
+})
+
+radio.setGroup(82) //TEST - may be unnecessary
 radio.setTransmitPower(7)
-show_S()
+    basic.showLeds(`
+        . # # # .
+        . . . . .
+        . # # # .
+        . . . . .
+        . # # # .
+        `)
+

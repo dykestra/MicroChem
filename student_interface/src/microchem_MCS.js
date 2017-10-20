@@ -49,6 +49,8 @@ let MBState = "Start-Up"
 let AnimationStage = 0
 let ClockSpeed = 500
 
+let SendWindow = true // should MB send messages or wait
+
 
 /********************************************* */
 /**     Controls the component on screen       */
@@ -77,6 +79,16 @@ radio.onDataPacketReceived(({ receivedString, signal }) => {
     }
 })
 
+// Flicker the leds to show message passed to HUB
+function led_flicker() {
+    led.setBrightness(61)
+    basic.pause(50)
+    led.setBrightness(255)
+}
+
+/********************************************* */
+/**State machine loop                          */
+/********************************************* */
 basic.forever(() => {
     switch (MBState) {
         case "Start-Up":
@@ -89,7 +101,9 @@ basic.forever(() => {
 			   . . . # .
 			   `)
             radio.setTransmitPower(7)
-            initialise_element()
+	    if (SendWindow) {
+		initialise_element()
+	    }
             if (chem_symbol != "") {
                 radio.setTransmitPower(0)
                 if (electron_balance > 0) {
@@ -103,8 +117,11 @@ basic.forever(() => {
         case "Ready":
             ClockSpeed = 500
             basic.showString(full_formula[curr_page])
-            radio.sendString(MBMB.toString() + own_ID)
-            BufferProcessing()
+	    if (SendWindow) {
+		radio.sendString(MBMB.toString() + own_ID)
+	    } else {
+		BufferProcessing()
+	    }
             break
         case "Reaction":
             ClockSpeed = 50
@@ -119,7 +136,7 @@ basic.forever(() => {
         default:
             MBState = "Start-Up"
     }
-
+    SendWindow = !SendWindow // switches send window state
     basic.pause(ClockSpeed)
 })
 
@@ -183,6 +200,7 @@ function MBMBProcessing(ID: string) {
                 break
             case "Send Hub":
                 ActiveIDState[IDIndex] = "Waiting Hub"
+	        led_flicker() //TEST
                 radio.setTransmitPower(7)
                 radio.sendString(MBHUB.toString() + own_ID + COLLISION.toString() + ID)
                 radio.setTransmitPower(0)
@@ -299,6 +317,7 @@ function isInArray(value: string, array: string[]) {
 }
 
 function initialise_element() {
+    led_flicker()
     send_str = MBHUB.toString() + own_ID + NEED_ELEMENT.toString()
     radio.sendString(send_str)
 }
@@ -416,7 +435,7 @@ function ReactionAnimation() {
 
 own_ID = control.deviceName().substr(3, ID_len)
 radio.setGroup(83)
-radio.setTransmitPower(7) //for initialisation
+radio.setTransmitPower(7)
 initialise_element()
 Threshold_Power = -63
 CommsBuffer = []
