@@ -51,11 +51,11 @@ class Scenario:
         if scen_file.exists():
             self.master_table = np.genfromtxt(scenario_file, delimiter=",", \
                                          dtype=[('aliasID', 'S2'),('serialNo', 'i4'),\
-                                                ('chem_symbol', 'S10'), ('valence', 'S2'), ('prev_symbol', 'S10')])
+                                                ('chem_symbol', 'S10'), ('valence', 'S2'), ('prev_symbol', 'S10'), ('prev_valence', 'S2')])
         else:
             self.master_table = np.array([(b'aa',-1,b'',b'')],\
                                      dtype=[('aliasID', 'S2'),('serialNo', 'i4'),\
-                                            ('chem_symbol', 'S10'), ('valence', 'S2'), ('prev_symbol', 'S10')])
+                                            ('chem_symbol', 'S10'), ('valence', 'S2'), ('prev_symbol', 'S10'), ('prev_valence', 'S2')])
 
         master.update_element_bit_list(self.master_table)
 
@@ -230,6 +230,8 @@ class Scenario:
                                 #Update the master table, and send OK message
                                 self.master_table["prev_symbol"][x] = self.master_table["chem_symbol"][x]
                                 self.master_table["prev_symbol"][y] = self.master_table["chem_symbol"][y]
+                                self.master_table["prev_valence"][x] = self.master_table["valence"][x]
+                                self.master_table["prev_valence"][y] = self.master_table["valence"][y]
                                 self.master_table["chem_symbol"][x] = self.reaction_table[j,i]
                                 self.master_table["chem_symbol"][y] = self.reaction_table[j,i]
                                 self.master_table["valence"][x] = b'+0'
