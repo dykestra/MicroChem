@@ -9,7 +9,7 @@ import csv
 from collections import OrderedDict
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-# from desktop import Scenario as sc
+from desktop import Scenario as sc
 from threading import Thread
 
 
@@ -156,8 +156,41 @@ class TeacherInterfaceGUI:
         if old_reaction != 'No reactions yet':
             self.add_to_log(old_reaction)
 
-        # update label to current reaction
-        reaction_str = " + ".join([e['prev_symbol'].decode('UTF-8') for e in elements])
+        symbols = []
+        valences = []
+
+        for e in elements:
+            symbols.append(e['prev_symbol'].decode('UTF-8'))
+            valences.append(int(e['prev_valence'].decode('UTF-8')))
+
+        quant_symbols = ['','']
+
+        abs_valences = [abs(v) for v in valences]
+        max_i = abs_valences.index(max(abs_valences))
+        min_i = abs_valences.index(min(abs_valences))
+
+        ratio = valences[max_i]/valences[min_i]
+        rem = valences[max_i] % valences[min_i]
+
+        quants = [0,0]
+
+        if ratio == 1:
+            quants[0] = 1
+            quants[1] = 1
+        elif rem == 0:
+            quants[max_i] = 1
+            quants[min_i] = abs(ratio)
+        else:
+            quants[0] = abs(valences[1])
+            quants[1] = abs(valences[0])
+
+        for i in range(len(symbols)):
+            if quants[i] == 1:
+                quant_symbols[i] = symbols[i]
+            else:
+                quant_symbols[i] = str(int(quants[i])) + symbols[i]
+
+        reaction_str = ' + '.join(quant_symbols)
         reaction_str += " => "
         reaction_str += elements[0]['chem_symbol'].decode('UTF-8')
 
@@ -299,8 +332,6 @@ class TeacherInterfaceGUI:
         self.thread = Thread(target=self.scenario_obj.main_loop, kwargs=dict(master=self))
         self.thread.setDaemon(True)
         self.thread.start()
-
-
 
 
 root = tk.ThemedTk()
