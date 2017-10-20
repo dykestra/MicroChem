@@ -167,7 +167,6 @@ class TeacherInterfaceGUI:
 
         self.reaction_log_tree.insert('', '0', text=old_reaction)
 
-
     def add_info_frame(self):
         """ Frame contains 
             - information about the element/compound on whichever ElementBit has been selected in the list
@@ -181,7 +180,7 @@ class TeacherInterfaceGUI:
 
         self.info_labels = []
         self.info_entries = []
-        self.info_vars = []
+        self.info_im = None
 
         self.info_frame.pack(side=RIGHT, fill="both", expand="true")
 
@@ -203,22 +202,29 @@ class TeacherInterfaceGUI:
         res = info_results[0]
 
         # clear info from previous selection
-        for j in range(0,len(self.info_labels)):
-            self.info_labels[j].pack_forget()
-            self.info_entries[j].pack_forget()
+        [l.pack_forget() for l in self.info_labels]
+        [e.pack_forget() for e in self.info_entries]
 
         self.info_labels.clear()
         self.info_entries.clear()
+        self.info_im = None
 
         # make labels and entries for new info
         for key, value in res.items():
-            label = ttk.Label(self.info_frame, text=key)
-            self.info_labels.append(label)
-            label.pack()
+            if key == 'Image':
+                if value != "":
+                    self.info_im = PhotoImage(file=os.path.join(self.IMAGE_DIR, value))
+                    label = ttk.Label(self.info_frame, image=self.info_im)
+                    self.info_labels.append(label)
+                    label.pack()
+            else:
+                label = ttk.Label(self.info_frame, text=key)
+                self.info_labels.append(label)
+                label.pack()
 
-            info = Message(self.info_frame, text=value, aspect=500, background="white", relief="raised", fg="#535d6d")
-            self.info_entries.append(info)
-            info.pack(ipadx=5, ipady=5, pady=10)
+                info = Message(self.info_frame, text=value, aspect=500, background="white", relief="raised", fg="#535d6d")
+                self.info_entries.append(info)
+                info.pack(ipadx=5, ipady=5, pady=10)
 
     def add_options_page(self, nb):
         """ Options tab has
