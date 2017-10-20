@@ -9,7 +9,7 @@ import csv
 from collections import OrderedDict
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from desktop import Scenario as sc
+# from desktop import Scenario as sc
 from threading import Thread
 
 
@@ -93,6 +93,8 @@ class TeacherInterfaceGUI:
         self.element_bit_tree.pack()
         self.element_bit_tree.bind("<<TreeviewSelect>>", self.on_element_bit_tree_select)
 
+        self.element_bit_tree.insert('','end',values='aa H2O 0')
+
         self.element_bit_list_frame.pack(side=LEFT,ipadx=10, fill="both", expand="false")
 
     def update_element_bit_list(self, new_list):
@@ -126,7 +128,7 @@ class TeacherInterfaceGUI:
 
         self.current_reactions_frame = ttk.Frame(self.reaction_frame)
         self.current_reaction_label_string = StringVar()
-        self.current_reaction_label_string.set('')
+        self.current_reaction_label_string.set('No reactions yet')
         self.current_reaction_label = Message(self.current_reactions_frame,
                                                   textvariable=self.current_reaction_label_string,
                                                   background="white", relief="raised", foreground="#535d6d", aspect=700)
@@ -151,7 +153,7 @@ class TeacherInterfaceGUI:
 
         # add previous reaction to log
         old_reaction = self.current_reaction_label_string.get()
-        if old_reaction != '':
+        if old_reaction != 'No reactions yet':
             self.add_to_log(old_reaction)
 
         # update label to current reaction
@@ -176,6 +178,9 @@ class TeacherInterfaceGUI:
         self.info_frame_label = ttk.Label(self.info_frame, text="Information Panel")
         self.info_frame_label.pack(pady=10)
 
+        self.info_empty_label = ttk.Label(self.info_frame, text="Select an ElementBit from the list for information")
+        self.info_empty_label.pack(pady=30, padx=20)
+
         self.read_info_from_file()
 
         self.info_labels = []
@@ -196,6 +201,8 @@ class TeacherInterfaceGUI:
 
     def info_frame_update(self, selected_symbol):
         """ update info frame to display info about selected element/compound """
+
+        self.info_empty_label.pack_forget()
 
         # get relevant info from table
         info_results = [x for x in self.info_table if x['Symbol']==selected_symbol]
