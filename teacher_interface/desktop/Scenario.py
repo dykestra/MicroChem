@@ -35,7 +35,7 @@ class Scenario:
     break_loop = False
 
     n_elements = 10
-    max_ttl = 100
+    max_ttl = 500 #Was 100
 
     def __init__(self, master, scenario_file):
 
@@ -148,11 +148,11 @@ class Scenario:
     # The main loop
     #==================================================
     def main_loop(self, master):
+        if not self.s.is_open:
+            self.s.open()
+
         while not self.break_loop:
             try:
-                # print(self.break_loop)
-
-
                 #read a line from the microbit, decode it and
                 # strip the whitespace at the end
                 data = self.s.readline().rstrip()
@@ -283,5 +283,6 @@ class Scenario:
                 try:
                     exit(0)
                 except SystemExit:
-                    os._exit(0)    
+                    os._exit(0)
+        self.s.close() # Close the serial port
         print("Out of loop")
