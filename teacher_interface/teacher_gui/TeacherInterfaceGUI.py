@@ -9,7 +9,7 @@ import csv
 from collections import OrderedDict
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from desktop import Scenario as sc
+# from desktop import Scenario as sc
 from threading import Thread
 
 
@@ -20,7 +20,7 @@ class TeacherInterfaceGUI:
     IMAGE_DIR = os.path.join(CURRENT_DIR, 'images')
     SCENARIOS_DIR = os.path.join(CURRENT_DIR, 'scenarios')
 
-    INFORMATION_FILE = os.path.join(CURRENT_DIR, 'informationDBv2.csv')
+    INFORMATION_FILE = os.path.join(CURRENT_DIR, 'informationDBv3final.csv')
     SCENARIOS_FILE = os.path.join(SCENARIOS_DIR, 'scenarios.csv')
 
     scenario_obj = None
@@ -93,9 +93,7 @@ class TeacherInterfaceGUI:
         self.element_bit_tree.pack()
         self.element_bit_tree.bind("<<TreeviewSelect>>", self.on_element_bit_tree_select)
 
-        self.element_bit_tree.insert('','end',values='aa H2O 0')
-
-        self.element_bit_list_frame.pack(side=LEFT,ipadx=10, fill="both", expand="false")
+        self.element_bit_list_frame.pack(side=LEFT, ipadx=10, fill="both", expand="false")
 
     def update_element_bit_list(self, new_list):
         """ update element bit list with new values stored in numpy ndarray
@@ -283,9 +281,9 @@ class TeacherInterfaceGUI:
         self.scenarios_tree = ttk.Treeview(self.scenarios_page, show='headings', columns=('name', 'desc', 'nbits'),
                                            selectmode="browse")
 
-        self.scenarios_tree.column('name', width=100)
+        self.scenarios_tree.column('name', width=150)
         self.scenarios_tree.heading('name', text='Scenario')
-        self.scenarios_tree.column('desc', width=400)
+        self.scenarios_tree.column('desc', width=600)
         self.scenarios_tree.heading('desc', text='Description')
         self.scenarios_tree.column('nbits', width=120)
         self.scenarios_tree.heading('nbits', text='No. ElementBits')
