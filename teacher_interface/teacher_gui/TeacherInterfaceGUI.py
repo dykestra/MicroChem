@@ -9,7 +9,7 @@ import csv
 from collections import OrderedDict
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-# from desktop import Scenario as sc
+from desktop import Scenario as sc
 from threading import Thread
 
 
