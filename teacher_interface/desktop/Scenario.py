@@ -60,8 +60,7 @@ class Scenario:
         master.update_element_bit_list(self.master_table)
 
         ## Create the reaction table
-        self.reaction_table = np.genfromtxt(os.path.join(CURRENT_DIR, 'elementsDB-v3.1.csv'), delimiter=";", dtype=None)
-        #self.reaction_table = np.genfromtxt(os.path.join(CURRENT_DIR, 'elementsDB-v4final.csv'), delimiter=",", dtype=None)
+        self.reaction_table = np.genfromtxt(os.path.join(CURRENT_DIR, 'elementsDB-v4final.csv'), delimiter=",", dtype=None)
         
         # Collision list setup
         # --------------------------------------------------
