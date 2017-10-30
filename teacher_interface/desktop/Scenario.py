@@ -35,7 +35,7 @@ class Scenario:
     break_loop = False
 
     n_elements = 10
-    max_ttl = 100
+    max_ttl = 500 #Was 100
 
     def __init__(self, master, scenario_file):
 
@@ -60,8 +60,8 @@ class Scenario:
         master.update_element_bit_list(self.master_table)
 
         ## Create the reaction table
-        self.reaction_table = np.genfromtxt(os.path.join(CURRENT_DIR, 'elementsDB-v3.1.csv'), delimiter=";", dtype=None)
-
+        self.reaction_table = np.genfromtxt(os.path.join(CURRENT_DIR, 'elementsDB-v4final.csv'), delimiter=",", dtype=None)
+        
         # Collision list setup
         # --------------------------------------------------
         self.MB_collision_list = [[] for x in range(self.n_elements)]
@@ -148,11 +148,11 @@ class Scenario:
     # The main loop
     #==================================================
     def main_loop(self, master):
+        if not self.s.is_open:
+            self.s.open()
+                
         while not self.break_loop:
             try:
-                # print(self.break_loop)
-
-
                 #read a line from the microbit, decode it and
                 # strip the whitespace at the end
                 data = self.s.readline().rstrip()
@@ -194,13 +194,13 @@ class Scenario:
 
                     # Element requests
                     elif comm_type == self.ELEMENTREQ:
+                        # Find "id_in" in the master table, and pick the element given to it, if any
                         i, = np.where(self.master_table["aliasID"] == id_in)
-                        if i:
+                        if i.size:
                             send_symbol = self.master_table["chem_symbol"][i][0]
                             send_valence = self.master_table["valence"][i][0]
                             print(send_valence + send_symbol + b'\n')
                             self.s.write(send_valence + send_symbol + b'\n')
-                        #  find "id_in" in the master table, and pick the element given to it, if any
                     # Reaction messages (collisions)
                     elif comm_type == self.REACTION_CHECK:
                         message_s = message.split(b"#")
@@ -283,5 +283,6 @@ class Scenario:
                 try:
                     exit(0)
                 except SystemExit:
-                    os._exit(0)    
+                    os._exit(0)
+        self.s.close() # Close the serial port
         print("Out of loop")

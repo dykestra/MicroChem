@@ -33,7 +33,7 @@ let packet_ok = 0
 let chk_chars: number[] = []
 let electron_balance = 0
 let chem_symbol = ""
-let sym_num = 0
+let chem_symbol_old = ""
 let curr_page = 0
 let send_str = ""
 let full_formula = ""
@@ -93,13 +93,17 @@ basic.forever(() => {
     switch (MBState) {
         case "Start-Up":
             ClockSpeed = 500
-            basic.showLeds(`
-			   . # . . .
-			   . . # . .
-			   . # # # .
-			   . . # . .
-			   . . . # .
-			   `)
+	    if (chem_symbol == "" && chem_symbol_old == "") {
+		basic.showLeds(`
+			       . # . . .
+			       . . # . .
+			       . # # # .
+			       . . # . .
+			       . . . # .
+			       `)
+	    } else {
+		basic.showString(full_formula[curr_page])
+	    }
             radio.setTransmitPower(7)
 	    if (SendWindow) {
 		initialise_element()
@@ -111,11 +115,17 @@ basic.forever(() => {
                 } else {
                     full_formula = chem_symbol + electron_balance.toString()
                 }
-                MBState = "Ready"
+		// Switch state to Reaction if previous chem symbol was different
+		if (chem_symbol_old == "" || (chem_symbol == chem_symbol_old) ) {
+                    MBState = "Ready"
+		} else {
+		    MBState = "Reaction"
+		}
             }
             break
         case "Ready":
-            ClockSpeed = 500
+            //ClockSpeed = 500
+            ClockSpeed = 250
             basic.showString(full_formula[curr_page])
 	    if (SendWindow) {
 		radio.sendString(MBMB.toString() + own_ID)
@@ -125,12 +135,10 @@ basic.forever(() => {
             break
         case "Reaction":
             ClockSpeed = 50
-            // Need a function that:
-            // -> Create screen animation for reaction
-            // -> Clean all matrices
             ReactionAnimation()
             if (AnimationStage == 0) {
-                MBState = "Start-Up"
+		chem_symbol_old = ""
+                MBState = "Ready"
             }
             break
         default:
@@ -200,7 +208,7 @@ function MBMBProcessing(ID: string) {
                 break
             case "Send Hub":
                 ActiveIDState[IDIndex] = "Waiting Hub"
-	        led_flicker() //TEST
+	        led_flicker()
                 radio.setTransmitPower(7)
                 radio.sendString(MBHUB.toString() + own_ID + COLLISION.toString() + ID)
                 radio.setTransmitPower(0)
@@ -250,16 +258,18 @@ function HBMBProcessing(message: string) {
                 own_ID = message.substr(1, 2)
             } else if (msg_type == NEW_ELEMENT) {
                 process_new_element(message)
-            } else if (msg_type == REACT) {
+            } /*else if (msg_type == REACT) {
                 process_new_element(message) //recycle code
                 MBState = "Reaction"
-            } //else if (msg_type == NO_REACT) {	
-            //}
+            } */
         }
     } else {
         if (msg_type == REACT) {
-            chem_symbol = ""
-            MBState = "Reaction"
+	    if (chem_symbol != "") {
+		chem_symbol_old = chem_symbol //.substr(0) //copy content
+	    }
+	    chem_symbol = ""
+	    MBState = "Start-Up"
         }
     }
 }
