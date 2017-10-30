@@ -9,7 +9,7 @@ import csv
 from collections import OrderedDict
 import sys
 sys.path.append(os.path.dirname(os.path.dirname(__file__)))
-from desktop import Scenario as sc
+# from desktop import Scenario as sc
 from threading import Thread
 
 
@@ -256,13 +256,14 @@ class TeacherInterfaceGUI:
                     self.info_labels.append(label)
                     label.pack()
             else:
-                label = ttk.Label(self.info_frame, text=key)
-                self.info_labels.append(label)
-                label.pack()
+                if value != '':
+                    label = ttk.Label(self.info_frame, text=key)
+                    self.info_labels.append(label)
+                    label.pack()
 
-                info = Message(self.info_frame, text=value, aspect=500, background="white", relief="raised", fg="#535d6d")
-                self.info_entries.append(info)
-                info.pack(ipadx=5, ipady=5, pady=10)
+                    info = Message(self.info_frame, text=value, aspect=500, background="white", relief="raised", fg="#535d6d")
+                    self.info_entries.append(info)
+                    info.pack(ipadx=5, ipady=5, pady=10)
 
     def add_options_page(self, nb):
         """ Options tab has
