@@ -1,16 +1,13 @@
-<<<<<<< HEAD
 File,Name,Description,No. ElementBits
 scenario_01.csv,Water,Make Water with the elements Hydrogen and Oxygen,5
 scenario_02.csv,Ammonia,Make Ammonia with the elements Nitrogen and Hydrogen,5
 scenario_03.csv,Potassium hydroxide,Make Potassium hydroxide with the elements Potassium Hydrogen and Oxygen,5
 scenario_04.csv,Sodium Chloride,Make Sodium Chloride with the elements Sodium and Chlorine,5
 scenario_05.csv,Sulfuric acid,Make Sulfuric acid with the elements Hydrogen Sulfur and Oxygen,5
-=======
 File,Name,Description,No. ElementBits
 scenario_00.csv,Water,Make Water with the elements Hydrogen and Oxygen,5
 scenario_02.csv,Ammonia,Make Ammonia with the elements Nitrogen and Hydrogen,5
 scenario_03.csv,Potassium hydroxide,Make Potassium hydroxide with the elements Potassium Hydrogen and Oxygen,5
 scenario_04.csv,Sodium Chloride,Make Sodium Chloride with the elements Sodium and Chlorine,5
 scenario_05.csv,Sulfuric acid,Make Sulfuric acid with the elements Hydrogen Sulfur and Oxygen,5
->>>>>>> f55a2e195c9011af38f17ab8d4ef85cad15c1b5c
 scenario_06.csv,Methane,Make Methane with the elements Carbon and Hydrogen,5
