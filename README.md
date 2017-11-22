@@ -25,7 +25,7 @@ Installation
 ------------
 To install the Micro:Chem app requires Python 3 and has the following dependencies:
 
-ttkthemes
+  - ttkthemes:
 ```
 > pip install ttkthemes
 ```
